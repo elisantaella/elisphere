@@ -218,7 +218,7 @@ class AssetLoader {
   try {
     const [characters, mtRushmore, textures, fonts, skyTexture] = await Promise.all([
       this.loadCharacterModels(),
-      this.loadMtRushmore(),
+      //this.loadMtRushmore(),
       this.loadEnvironmentTextures(),
       this.loadFonts(),
       this.loadSkyTexture() // Add sky texture loading
