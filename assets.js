@@ -149,7 +149,7 @@ class AssetLoader {
       });
     }
     
-    loadMtRushmore() {
+    /*loadMtRushmore() {
         return new Promise((resolve, reject) => {
           this.gltfLoader.load(
             'textures/rushmore.glb',
@@ -166,7 +166,7 @@ class AssetLoader {
         );
       });
     }
-    
+    */
     loadEnvironmentTextures() {
       // Load any additional textures needed for the environment
       return new Promise((resolve) => {
