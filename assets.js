@@ -82,7 +82,7 @@ class AssetLoader {
         return new Promise((resolve, reject) => {
           // Load the Mixamo character models
           this.gltfLoader.load(
-            'https://drive.google.com/uc?export=download&id=11h-qHG-IJvTAhtOC-TQijGvwElNRBdqr',
+            'textures/character.glb',
             (gltf) => {
               // Scale the model to be larger - increased from 0.01 to 0.04
               gltf.scene.scale.set(0.04, 0.04, 0.04);
