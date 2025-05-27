@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Benjamin Franklin's Gratitude Journal</title>
+  
+  <style>
+    @font-face {
+      font-family: 'Minecraft';
+      src: url('fonts/minecraft.woff') format('woff');
+      font-weight: normal;
+      font-style: normal;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Minecraft', monospace;
+      background: linear-gradient(135deg, #8B4513 0%, #CD853F 50%, #DEB887 100%);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Animated autumn leaves background */
+    .autumn-leaves {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .leaf {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: #FF8C00;
+      opacity: 0.7;
+      animation: fall linear infinite;
+    }
+
+    .leaf:nth-child(2n) { background: #FF4500; }
+    .leaf:nth-child(3n) { background: #CD5C5C; }
+    .leaf:nth-child(4n) { background: #A0522D; }
+    .leaf:nth-child(5n) { background: #D2691E; }
+
+    @keyframes fall {
+      0% {
+        transform: translateY(-100px) rotate(0deg);
+        opacity: 0;
+      }
+      10% {
+        opacity: 0.7;
+      }
+      90% {
+        opacity: 0.7;
+      }
+      100% {
+        transform: translateY(100vh) rotate(360deg);
+        opacity: 0;
+      }
+    }
+
+    .game-container {
+      position: relative;
+      z-index: 2;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+      color: #8B4513;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .header h1 {
+      font-size: 48px;
+      margin-bottom: 10px;
+      animation: glow 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes glow {
+      from { text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+      to { text-shadow: 2px 2px 4px rgba(0,0,0,0.3), 0 0 20px rgba(255,140,0,0.5); }
+    }
+
+    .game-area {
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: 30px;
+      margin-bottom: 30px;
+    }
+
+    .collection-area {
+      background: rgba(139, 69, 19, 0.2);
+      border: 3px solid #8B4513;
+      border-radius: 15px;
+      padding: 20px;
+      position: relative;
+      min-height: 500px;
+    }
+
+    .collection-title {
+      color: #8B4513;
+      font-size: 24px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .gratitude-item {
+      background: rgba(255, 140, 0, 0.9);
+      border: 2px solid #CD853F;
+      border-radius: 10px;
+      padding: 15px;
+      margin: 10px 0;
+      cursor: grab;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      font-size: 16px;
+      color: #8B4513;
+      user-select: none;
+      position: relative;
+    }
+
+    .gratitude-item:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+      background: rgba(255, 140, 0, 1);
+    }
+
+    .gratitude-item:active {
+      cursor: grabbing;
+    }
+
+    .gratitude-item.collected {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+
+    .journal {
+      background: #F5DEB3;
+      border: 4px solid #8B4513;
+      border-radius: 15px;
+      padding: 20px;
+      position: relative;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+    }
+
+    .journal::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50px;
+      width: 2px;
+      height: 100%;
+      background: #FF6B6B;
+      opacity: 0.3;
+    }
+
+    .journal-title {
+      color: #8B4513;
+      font-size: 24px;
+      margin-bottom: 20px;
+      text-align: center;
+      border-bottom: 2px solid #8B4513;
+      padding-bottom: 10px;
+    }
+
+    .journal-entry {
+      min-height: 80px;
+      border: 2px dashed #CD853F;
+      border-radius: 8px;
+      margin: 15px 0;
+      padding: 15px;
+      background: rgba(205, 133, 63, 0.1);
+      position: relative;
+      transition: all 0.3s ease;
+    }
+
+    .journal-entry.drag-over {
+      background: rgba(255, 140, 0, 0.3);
+      border-color: #FF8C00;
+      transform: scale(1.02);
+    }
+
+    .journal-entry.filled {
+      background: rgba(255, 140, 0, 0.2);
+      border-style: solid;
+    }
+
+    .journal-entry-number {
+      position: absolute;
+      top: -15px;
+      left: 15px;
+      background: #8B4513;
+      color: white;
+      padding: 5px 10px;
+      border-radius: 50%;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .journal-entry-text {
+      color: #8B4513;
+      font-size: 16px;
+      line-height: 1.4;
+    }
+
+    .progress-area {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(139, 69, 19, 0.2);
+      border: 3px solid #8B4513;
+      border-radius: 15px;
+      padding: 20px;
+    }
+
+    .progress-bar-container {
+      flex-grow: 1;
+      margin: 0 20px;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 30px;
+      background: rgba(205, 133, 63, 0.3);
+      border: 2px solid #8B4513;
+      border-radius: 15px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #FF8C00, #FFD700);
+      width: 0%;
+      transition: width 0.5s ease;
+      border-radius: 15px;
+    }
+
+    .progress-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #8B4513;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    .score {
+      color: #8B4513;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .timer {
+      color: #8B4513;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .controls {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .btn {
+      background: linear-gradient(45deg, #FF8C00, #FFD700);
+      border: 3px solid #8B4513;
+      border-radius: 10px;
+      color: #8B4513;
+      padding: 15px 30px;
+      font-size: 18px;
+      font-family: 'Minecraft', monospace;
+      font-weight: bold;
+      cursor: pointer;
+      margin: 0 10px;
+      transition: all 0.3s ease;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+    }
+
+    .btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+      background: linear-gradient(45deg, #FFD700, #FF8C00);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .completion-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      animation: fadeIn 0.5s ease;
+    }
+
+    .completion-content {
+      background: #F5DEB3;
+      border: 4px solid #8B4513;
+      border-radius: 20px;
+      padding: 40px;
+      text-align: center;
+      max-width: 600px;
+      color: #8B4513;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    }
+
+    .completion-content h2 {
+      font-size: 36px;
+      margin-bottom: 20px;
+      color: #FF8C00;
+    }
+
+    .franklin-quote {
+      font-size: 18px;
+      font-style: italic;
+      margin: 20px 0;
+      padding: 20px;
+      background: rgba(255, 140, 0, 0.1);
+      border-left: 4px solid #FF8C00;
+      border-radius: 5px;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes sparkle {
+      0%, 100% { transform: scale(1) rotate(0deg); opacity: 1; }
+      50% { transform: scale(1.2) rotate(180deg); opacity: 0.8; }
+    }
+
+    .sparkle {
+      animation: sparkle 1.5s ease-in-out infinite;
+    }
+
+    /* Mobile responsive */
+    @media (max-width: 768px) {
+      .game-area {
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+      
+      .header h1 {
+        font-size: 32px;
+      }
+      
+      .progress-area {
+        flex-direction: column;
+        gap: 15px;
+      }
+      
+      .btn {
+        font-size: 16px;
+        padding: 12px 24px;
+        margin: 5px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Autumn leaves background -->
+  <div class="autumn-leaves" id="leaves-container"></div>
+
+  <div class="game-container">
+    <div class="header">
+      <h1>Benjamin Franklin's Gratitude Journal</h1>
+      <p>"An investment in knowledge pays the best interest, but gratitude pays the heart."</p>
+    </div>
+
+    <div class="game-area">
+      <div class="collection-area">
+        <h3 class="collection-title">Collect Your Daily Gratitudes</h3>
+        <div id="gratitude-items">
+          <!-- Gratitude items will be generated here -->
+        </div>
+      </div>
+
+      <div class="journal">
+        <h3 class="journal-title">My Daily Gratitude Journal</h3>
+        <div class="journal-entry" data-entry="1">
+          <div class="journal-entry-number">1</div>
+          <div class="journal-entry-text">Drop your first gratitude here...</div>
+        </div>
+        <div class="journal-entry" data-entry="2">
+          <div class="journal-entry-number">2</div>
+          <div class="journal-entry-text">Drop your second gratitude here...</div>
+        </div>
+        <div class="journal-entry" data-entry="3">
+          <div class="journal-entry-number">3</div>
+          <div class="journal-entry-text">Drop your third gratitude here...</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="progress-area">
+      <div class="score">
+        Score: <span id="score">0</span>
+      </div>
+      <div class="progress-bar-container">
+        <div class="progress-bar">
+          <div class="progress-fill" id="progress-fill"></div>
+          <div class="progress-text" id="progress-text">0 / 3 Gratitudes</div>
+        </div>
+      </div>
+      <div class="timer">
+        Time: <span id="timer">0:00</span>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="btn" onclick="resetGame()">Reset Journal</button>
+      <button class="btn" onclick="returnToElisphere()">Return to Elisphere</button>
+    </div>
+  </div>
+
+  <!-- Completion Screen -->
+  <div class="completion-screen" id="completion-screen">
+    <div class="completion-content">
+      <h2>🍂 Journal Complete! 🍂</h2>
+      <div class="franklin-quote">
+        "Be at war with your vices, at peace with your neighbors, and let every new year find you a better man."<br>
+        <strong>- Benjamin Franklin</strong>
+      </div>
+      <p>You've successfully filled your gratitude journal! Like Franklin tracked his virtues daily, you've practiced the art of appreciation.</p>
+      <p><strong>Your Score:</strong> <span id="final-score">0</span> points</p>
+      <p><strong>Time:</strong> <span id="final-time">0:00</span></p>
+      <button class="btn" onclick="playAgain()">Practice Again</button>
+      <button class="btn" onclick="returnToElisphere()">Return to Elisphere</button>
+    </div>
+  </div>
+
+  <script>
+    // Game state
+    let gameStarted = false;
+    let startTime = null;
+    let gameInterval = null;
+    let score = 0;
+    let completedEntries = 0;
+    let draggedItem = null;
+
+    // Audio system
+    let audioContext = null;
+    let musicGain = null;
+    let sfxGain = null;
+    let backgroundMusic = null;
+
+    // Sample gratitude items
+    const gratitudeItems = [
+      "I'm grateful for my warm home that shelters me from storms",
+      "I appreciate the kind words from a friend today",
+      "I'm thankful for the delicious meal I enjoyed",
+      "I'm grateful for the beautiful sunset I witnessed",
+      "I appreciate having clean water to drink",
+      "I'm thankful for my health and ability to move freely",
+      "I'm grateful for the opportunity to learn something new",
+      "I appreciate the laughter shared with loved ones",
+      "I'm thankful for the peaceful moment in nature",
+      "I'm grateful for the roof over my head",
+      "I appreciate the technology that connects me to others",
+      "I'm thankful for the books that expand my mind",
+      "I'm grateful for the supportive people in my life",
+      "I appreciate the chance to help someone today",
+      "I'm thankful for the simple pleasure of a good conversation"
+    ];
+
+    // Initialize the game
+    function initGame() {
+      createAudioSystem();
+      createAutumnLeaves();
+      generateGratitudeItems();
+      setupDragAndDrop();
+      startTimer();
+      playBackgroundMusic();
+    }
+
+    function createAudioSystem() {
+      try {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        musicGain = audioContext.createGain();
+        sfxGain = audioContext.createGain();
+        
+        musicGain.gain.value = 0.3;
+        sfxGain.gain.value = 0.5;
+        
+        musicGain.connect(audioContext.destination);
+        sfxGain.connect(audioContext.destination);
+      } catch (error) {
+        console.warn('Audio not available:', error);
+      }
+    }
+
+    function playSound(soundType) {
+      if (!audioContext) return;
+      
+      // Create different tones for different actions
+      const frequencies = {
+        collect: 440,  // A note
+        place: 523,    // C note
+        complete: 659, // E note
+        success: 784   // G note
+      };
+
+      const freq = frequencies[soundType] || 440;
+      
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(sfxGain);
+      
+      oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
+      oscillator.type = 'sine';
+      
+      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.01);
+      gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.3);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.3);
+    }
+
+    function playBackgroundMusic() {
+      // In a real implementation, this would load './textures/music/gratitude_theme.mp3'
+      console.log('Playing background music: ./textures/music/gratitude_theme.mp3');
+    }
+
+    function createAutumnLeaves() {
+      const container = document.getElementById('leaves-container');
+      const numberOfLeaves = 15;
+
+      for (let i = 0; i < numberOfLeaves; i++) {
+        const leaf = document.createElement('div');
+        leaf.className = 'leaf';
+        
+        // Random positioning and timing
+        leaf.style.left = Math.random() * 100 + '%';
+        leaf.style.animationDuration = (Math.random() * 10 + 15) + 's';
+        leaf.style.animationDelay = Math.random() * 5 + 's';
+        
+        // Random size variation
+        const size = Math.random() * 10 + 15;
+        leaf.style.width = size + 'px';
+        leaf.style.height = size + 'px';
+        
+        // Random rotation
+        leaf.style.transform = `rotate(${Math.random() * 360}deg)`;
+        
+        container.appendChild(leaf);
+      }
+    }
+
+    function generateGratitudeItems() {
+      const container = document.getElementById('gratitude-items');
+      
+      // Randomly select 6 items for this session
+      const selectedItems = [];
+      const shuffled = [...gratitudeItems];
+      
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      
+      for (let i = 0; i < 6; i++) {
+        const item = document.createElement('div');
+        item.className = 'gratitude-item';
+        item.draggable = true;
+        item.textContent = shuffled[i];
+        item.dataset.id = i;
+        
+        container.appendChild(item);
+      }
+    }
+
+    function setupDragAndDrop() {
+      // Add drag event listeners to gratitude items
+      document.addEventListener('dragstart', (e) => {
+        if (e.target.classList.contains('gratitude-item') && !e.target.classList.contains('collected')) {
+          draggedItem = e.target;
+          e.target.style.opacity = '0.5';
+          playSound('collect');
+        }
+      });
+
+      document.addEventListener('dragend', (e) => {
+        if (e.target.classList.contains('gratitude-item')) {
+          e.target.style.opacity = '1';
+          draggedItem = null;
+        }
+      });
+
+      // Add drop event listeners to journal entries
+      document.querySelectorAll('.journal-entry').forEach(entry => {
+        entry.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          entry.classList.add('drag-over');
+        });
+
+        entry.addEventListener('dragleave', (e) => {
+          entry.classList.remove('drag-over');
+        });
+
+        entry.addEventListener('drop', (e) => {
+          e.preventDefault();
+          entry.classList.remove('drag-over');
+          
+          if (draggedItem && !entry.classList.contains('filled')) {
+            // Place the gratitude in the journal entry
+            const textElement = entry.querySelector('.journal-entry-text');
+            textElement.textContent = draggedItem.textContent;
+            entry.classList.add('filled');
+            
+            // Mark the item as collected
+            draggedItem.classList.add('collected');
+            
+            // Update game state
+            completedEntries++;
+            score += 100;
+            updateProgress();
+            playSound('place');
+            
+            // Add sparkle effect
+            entry.classList.add('sparkle');
+            setTimeout(() => entry.classList.remove('sparkle'), 1500);
+            
+            // Check if game is complete
+            if (completedEntries >= 3) {
+              setTimeout(completeGame, 1000);
+            }
+          }
+        });
+      });
+    }
+
+    function startTimer() {
+      if (gameStarted) return;
+      
+      gameStarted = true;
+      startTime = Date.now();
+      
+      gameInterval = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        const minutes = Math.floor(elapsed / 60000);
+        const seconds = Math.floor((elapsed % 60000) / 1000);
+        document.getElementById('timer').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+      }, 1000);
+    }
+
+    function updateProgress() {
+      const progressFill = document.getElementById('progress-fill');
+      const progressText = document.getElementById('progress-text');
+      const scoreElement = document.getElementById('score');
+      
+      const percentage = (completedEntries / 3) * 100;
+      progressFill.style.width = percentage + '%';
+      progressText.textContent = `${completedEntries} / 3 Gratitudes`;
+      scoreElement.textContent = score;
+    }
+
+    function completeGame() {
+      clearInterval(gameInterval);
+      playSound('success');
+      
+      const elapsed = Date.now() - startTime;
+      const minutes = Math.floor(elapsed / 60000);
+      const seconds = Math.floor((elapsed % 60000) / 1000);
+      const timeText = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+      
+      // Bonus points for speed
+      const speedBonus = Math.max(0, 300 - Math.floor(elapsed / 1000)) * 2;
+      score += speedBonus;
+      
+      document.getElementById('final-score').textContent = score;
+      document.getElementById('final-time').textContent = timeText;
+      document.getElementById('completion-screen').style.display = 'flex';
+      
+      console.log('Game completed! Playing success sound: ./textures/sfx/gratitude_complete.wav');
+    }
+
+    function resetGame() {
+      // Reset game state
+      gameStarted = false;
+      startTime = null;
+      score = 0;
+      completedEntries = 0;
+      draggedItem = null;
+      
+      if (gameInterval) {
+        clearInterval(gameInterval);
+        gameInterval = null;
+      }
+      
+      // Reset UI
+      document.getElementById('score').textContent = '0';
+      document.getElementById('timer').textContent = '0:00';
+      document.getElementById('progress-fill').style.width = '0%';
+      document.getElementById('progress-text').textContent = '0 / 3 Gratitudes';
+      document.getElementById('completion-screen').style.display = 'none';
+      
+      // Reset journal entries
+      document.querySelectorAll('.journal-entry').forEach((entry, index) => {
+        entry.classList.remove('filled', 'sparkle');
+        entry.querySelector('.journal-entry-text').textContent = `Drop your ${['first', 'second', 'third'][index]} gratitude here...`;
+      });
+      
+      // Clear and regenerate gratitude items
+      document.getElementById('gratitude-items').innerHTML = '';
+      generateGratitudeItems();
+      setupDragAndDrop();
+      
+      console.log('Playing reset sound: ./textures/sfx/journal_reset.wav');
+    }
+
+    function playAgain() {
+      resetGame();
+    }
+
+    function returnToElisphere() {
+      // This would integrate with the main game
+      if (window.parent && window.parent.game) {
+        // Return to the main game
+        window.parent.game.returnFromMiniGame();
+      } else {
+        // Fallback - close window or redirect
+        alert("Returning to Elisphere... (This would integrate with the main game)");
+        window.close();
+      }
+    }
+
+    // Initialize the game when the page loads
+    window.addEventListener('load', () => {
+      // Resume audio context on user interaction
+      document.addEventListener('click', () => {
+        if (audioContext && audioContext.state === 'suspended') {
+          audioContext.resume();
+        }
+      }, { once: true });
+      
+      initGame();
+    });
+
+    // Prevent context menu on drag items
+    document.addEventListener('contextmenu', (e) => {
+      if (e.target.classList.contains('gratitude-item')) {
+        e.preventDefault();
+      }
+    });
+  </script>
+</body>
+</html>

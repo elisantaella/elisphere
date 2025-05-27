@@ -1,0 +1,1243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jane Addams' Hull House - Acts of Kindness</title>
+  
+  <style>
+    @font-face {
+      font-family: 'Minecraft';
+      src: url('fonts/minecraft.woff') format('woff');
+      font-weight: normal;
+      font-style: normal;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Minecraft', monospace;
+      background: linear-gradient(135deg, #708090 0%, #B0C4DE 50%, #E6E6FA 100%);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Animated urban background */
+    .urban-scene {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .smoke-stack {
+      position: absolute;
+      width: 20px;
+      height: 80px;
+      background: linear-gradient(to top, #696969, #A9A9A9);
+      border-radius: 3px;
+    }
+
+    .smoke {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      background: rgba(169, 169, 169, 0.6);
+      border-radius: 50%;
+      animation: smoke-rise 8s linear infinite;
+    }
+
+    @keyframes smoke-rise {
+      0% {
+        opacity: 0.6;
+        transform: translateY(0) translateX(0) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(-200px) translateX(30px) scale(2);
+      }
+    }
+
+    .immigrant {
+      position: absolute;
+      font-size: 20px;
+      animation: walk-by 15s linear infinite;
+      z-index: 2;
+    }
+
+    @keyframes walk-by {
+      0% { transform: translateX(-50px); }
+      100% { transform: translateX(calc(100vw + 50px)); }
+    }
+
+    .game-container {
+      position: relative;
+      z-index: 3;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+      color: #DA70D6;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .header h1 {
+      font-size: 48px;
+      margin-bottom: 10px;
+      animation: kindness-glow 3s ease-in-out infinite alternate;
+    }
+
+    @keyframes kindness-glow {
+      from { text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+      to { text-shadow: 2px 2px 4px rgba(0,0,0,0.3), 0 0 20px rgba(218,112,214,0.5); }
+    }
+
+    .addams-quote {
+      font-size: 18px;
+      font-style: italic;
+      margin-bottom: 15px;
+      color: #4B0082;
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .game-area {
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: 30px;
+      margin-bottom: 30px;
+    }
+
+    .hull-house {
+      background: linear-gradient(135deg, rgba(218, 112, 214, 0.1), rgba(221, 160, 221, 0.2));
+      border: 4px solid #DA70D6;
+      border-radius: 20px;
+      padding: 20px;
+      position: relative;
+      min-height: 700px;
+    }
+
+    .house-title {
+      color: #DA70D6;
+      font-size: 24px;
+      margin-bottom: 20px;
+      text-align: center;
+      border-bottom: 3px solid #DA70D6;
+      padding-bottom: 10px;
+    }
+
+    .house-rooms {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: repeat(3, 1fr);
+      gap: 15px;
+      height: 600px;
+    }
+
+    .room {
+      background: rgba(255, 255, 255, 0.9);
+      border: 3px solid #DA70D6;
+      border-radius: 12px;
+      padding: 15px;
+      position: relative;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      overflow: hidden;
+    }
+
+    .room:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+      border-color: #FF69B4;
+    }
+
+    .room.active {
+      background: rgba(255, 182, 193, 0.9);
+      border-color: #FF1493;
+      animation: room-pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes room-pulse {
+      0%, 100% { box-shadow: 0 0 10px rgba(255, 20, 147, 0.3); }
+      50% { box-shadow: 0 0 20px rgba(255, 20, 147, 0.6); }
+    }
+
+    .room-title {
+      font-weight: bold;
+      color: #4B0082;
+      font-size: 16px;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+
+    .room-description {
+      font-size: 12px;
+      color: #696969;
+      margin-bottom: 10px;
+      line-height: 1.3;
+    }
+
+    .room-capacity {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #DA70D6;
+      color: white;
+      padding: 3px 8px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .room-visitors {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 10px;
+    }
+
+    .visitor {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: visitor-arrive 0.5s ease;
+    }
+
+    @keyframes visitor-arrive {
+      from { transform: scale(0); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .visitor-panel {
+      background: rgba(75, 0, 130, 0.9);
+      border: 4px solid #4B0082;
+      border-radius: 15px;
+      padding: 20px;
+      height: fit-content;
+      color: white;
+    }
+
+    .visitors-title {
+      color: white;
+      font-size: 22px;
+      margin-bottom: 20px;
+      text-align: center;
+      border-bottom: 2px solid white;
+      padding-bottom: 10px;
+    }
+
+    .visitor-queue {
+      max-height: 400px;
+      overflow-y: auto;
+      margin-bottom: 20px;
+    }
+
+    .visitor-card {
+      background: rgba(255, 255, 255, 0.9);
+      color: #4B0082;
+      border: 2px solid #DA70D6;
+      border-radius: 10px;
+      padding: 15px;
+      margin: 10px 0;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .visitor-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      background: rgba(255, 255, 255, 1);
+    }
+
+    .visitor-card.helping {
+      background: rgba(152, 251, 152, 0.9);
+      border-color: #32CD32;
+      animation: helping-glow 1.5s ease-in-out infinite alternate;
+    }
+
+    @keyframes helping-glow {
+      from { box-shadow: 0 0 5px rgba(50, 205, 50, 0.5); }
+      to { box-shadow: 0 0 15px rgba(50, 205, 50, 0.8); }
+    }
+
+    .visitor-name {
+      font-weight: bold;
+      font-size: 16px;
+      margin-bottom: 5px;
+      color: #4B0082;
+    }
+
+    .visitor-origin {
+      font-size: 12px;
+      color: #696969;
+      margin-bottom: 5px;
+    }
+
+    .visitor-needs {
+      font-size: 14px;
+      color: #8B008B;
+      font-style: italic;
+    }
+
+    .visitor-emoji {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      font-size: 24px;
+    }
+
+    .kindness-meter {
+      background: rgba(218, 112, 214, 0.2);
+      border: 3px solid #DA70D6;
+      border-radius: 15px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+
+    .meter-title {
+      color: #DA70D6;
+      font-size: 20px;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+
+    .meter-bar {
+      background: rgba(218, 112, 214, 0.3);
+      border: 2px solid #DA70D6;
+      border-radius: 15px;
+      height: 30px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .meter-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #DA70D6, #FF69B4);
+      width: 0%;
+      transition: width 0.5s ease;
+      border-radius: 13px;
+    }
+
+    .meter-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #4B0082;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    .service-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+      margin: 20px 0;
+    }
+
+    .stat-card {
+      background: rgba(218, 112, 214, 0.1);
+      border: 2px solid #DA70D6;
+      border-radius: 10px;
+      padding: 15px;
+      text-align: center;
+    }
+
+    .stat-number {
+      font-size: 32px;
+      font-weight: bold;
+      color: #DA70D6;
+      margin-bottom: 5px;
+    }
+
+    .stat-label {
+      font-size: 14px;
+      color: #4B0082;
+    }
+
+    .controls {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .btn {
+      background: linear-gradient(45deg, #DA70D6, #FF69B4);
+      border: 3px solid #4B0082;
+      border-radius: 10px;
+      color: white;
+      padding: 15px 30px;
+      font-size: 18px;
+      font-family: 'Minecraft', monospace;
+      font-weight: bold;
+      cursor: pointer;
+      margin: 0 10px;
+      transition: all 0.3s ease;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+    }
+
+    .btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+      background: linear-gradient(45deg, #FF69B4, #DA70D6);
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .completion-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      animation: fadeIn 0.5s ease;
+    }
+
+    .completion-content {
+      background: rgba(245, 222, 179, 0.98);
+      border: 4px solid #DA70D6;
+      border-radius: 20px;
+      padding: 40px;
+      text-align: center;
+      max-width: 700px;
+      color: #4B0082;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    }
+
+    .completion-content h2 {
+      font-size: 36px;
+      margin-bottom: 20px;
+      color: #DA70D6;
+    }
+
+    .addams-final-quote {
+      font-size: 18px;
+      font-style: italic;
+      margin: 20px 0;
+      padding: 20px;
+      background: rgba(218, 112, 214, 0.1);
+      border-left: 4px solid #DA70D6;
+      border-radius: 5px;
+    }
+
+    .kindness-celebration {
+      font-size: 28px;
+      margin: 20px 0;
+      animation: celebration-sparkle 1.5s ease-in-out infinite alternate;
+    }
+
+    @keyframes celebration-sparkle {
+      from { transform: scale(1); filter: brightness(1); }
+      to { transform: scale(1.05); filter: brightness(1.2); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    /* Mobile responsive */
+    @media (max-width: 768px) {
+      .game-area {
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+      
+      .header h1 {
+        font-size: 32px;
+      }
+      
+      .addams-quote {
+        font-size: 16px;
+      }
+      
+      .house-rooms {
+        grid-template-columns: 1fr;
+        height: auto;
+      }
+      
+      .service-stats {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+      
+      .btn {
+        font-size: 16px;
+        padding: 12px 24px;
+        margin: 5px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Urban background -->
+  <div class="urban-scene" id="urban-background"></div>
+
+  <div class="game-container">
+    <div class="header">
+      <h1>💗 Hull House - Acts of Kindness 💗</h1>
+      <p class="addams-quote">"The good we secure for ourselves is precarious and uncertain until it is secured for all of us and incorporated into our common life."</p>
+    </div>
+
+    <div class="game-area">
+      <div class="hull-house">
+        <h3 class="house-title">Hull House Settlement Rooms</h3>
+        <div class="house-rooms">
+          <div class="room" data-room="nursery" onclick="selectRoom('nursery')">
+            <div class="room-capacity">0/8</div>
+            <div class="room-title">Nursery School</div>
+            <div class="room-description">Childcare for working mothers - teaching children while parents work</div>
+            <div class="room-visitors" id="nursery-visitors"></div>
+          </div>
+          
+          <div class="room" data-room="kitchen" onclick="selectRoom('kitchen')">
+            <div class="room-capacity">0/12</div>
+            <div class="room-title">Community Kitchen</div>
+            <div class="room-description">Cooking classes and nutritious meals for families in need</div>
+            <div class="room-visitors" id="kitchen-visitors"></div>
+          </div>
+          
+          <div class="room" data-room="classroom" onclick="selectRoom('classroom')">
+            <div class="room-capacity">0/15</div>
+            <div class="room-title">English Classes</div>
+            <div class="room-description">Teaching English and citizenship skills to new immigrants</div>
+            <div class="room-visitors" id="classroom-visitors"></div>
+          </div>
+          
+          <div class="room" data-room="clinic" onclick="selectRoom('clinic')">
+            <div class="room-capacity">0/6</div>
+            <div class="room-title">Health Clinic</div>
+            <div class="room-description">Basic medical care and health education for the community</div>
+            <div class="room-visitors" id="clinic-visitors"></div>
+          </div>
+          
+          <div class="room" data-room="workshop" onclick="selectRoom('workshop')">
+            <div class="room-capacity">0/10</div>
+            <div class="room-title">Job Training</div>
+            <div class="room-description">Vocational skills and employment preparation programs</div>
+            <div class="room-visitors" id="workshop-visitors"></div>
+          </div>
+          
+          <div class="room" data-room="library" onclick="selectRoom('library')">
+            <div class="room-capacity">0/20</div>
+            <div class="room-title">Community Library</div>
+            <div class="room-description">Books, newspapers, and quiet study space for all ages</div>
+            <div class="room-visitors" id="library-visitors"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="visitor-panel">
+        <h3 class="visitors-title">Community Members Seeking Help</h3>
+        <div class="visitor-queue" id="visitor-queue">
+          <!-- Visitors will be generated here -->
+        </div>
+        <div style="text-align: center; margin-top: 15px;">
+          <button class="btn" id="welcome-visitors" onclick="welcomeNewVisitors()" disabled>Welcome New Arrivals</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="service-stats">
+      <div class="stat-card">
+        <div class="stat-number" id="people-helped">0</div>
+        <div class="stat-label">People Helped</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="services-provided">0</div>
+        <div class="stat-label">Services Provided</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="families-supported">0</div>
+        <div class="stat-label">Families Supported</div>
+      </div>
+    </div>
+
+    <div class="kindness-meter">
+      <h3 class="meter-title">Community Impact</h3>
+      <div class="meter-bar">
+        <div class="meter-fill" id="kindness-fill"></div>
+        <div class="meter-text" id="kindness-text">0% - Begin your mission of kindness</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="btn" id="start-settlement" onclick="startSettlement()">Open Hull House</button>
+      <button class="btn" onclick="resetSettlement()">Reset Settlement</button>
+      <button class="btn" onclick="returnToElisphere()">Return to Elisphere</button>
+    </div>
+  </div>
+
+  <!-- Completion Screen -->
+  <div class="completion-screen" id="completion-screen">
+    <div class="completion-content">
+      <h2>🌟 Settlement House Legacy Complete! 🌟</h2>
+      <div class="kindness-celebration">💗 ✨ Spreading Kindness Throughout Chicago! ✨ 💗</div>
+      <div class="addams-final-quote">
+        "Nothing could be worse than the fear that one had given up too soon, and left one unexpended effort that might have saved the world."<br>
+        <strong>- Jane Addams</strong>
+      </div>
+      <p>You've successfully created a thriving settlement house! Like Jane Addams, you've learned that individual acts of kindness can transform entire communities when we work together.</p>
+      <p><strong>Community Impact:</strong> <span id="final-impact">0</span>%</p>
+      <p><strong>Total People Helped:</strong> <span id="final-helped">0</span></p>
+      <p><strong>Services Provided:</strong> <span id="final-services">0</span></p>
+      <button class="btn" onclick="helpMore()">Help More Communities</button>
+      <button class="btn" onclick="returnToElisphere()">Return to Elisphere</button>
+    </div>
+  </div>
+
+  <script>
+    // Game state
+    let gameStarted = false;
+    let startTime = null;
+    let gameInterval = null;
+    let kindnessLevel = 0;
+    let peopleHelped = 0;
+    let servicesProvided = 0;
+    let familiesSupported = 0;
+    let selectedRoom = null;
+    let visitorQueue = [];
+    let roomCapacities = {
+      nursery: 8,
+      kitchen: 12,
+      classroom: 15,
+      clinic: 6,
+      workshop: 10,
+      library: 20
+    };
+    let roomOccupancy = {
+      nursery: 0,
+      kitchen: 0,
+      classroom: 0,
+      clinic: 0,
+      workshop: 0,
+      library: 0
+    };
+
+    // Audio system
+    let audioContext = null;
+    let musicGain = null;
+    let sfxGain = null;
+
+    // Immigrant families and their stories
+    const visitorProfiles = [
+      { 
+        name: "Maria Rossi", 
+        origin: "from Italy", 
+        needs: "English lessons for citizenship",
+        emoji: "🇮🇹",
+        preferredRoom: "classroom",
+        story: "Dreams of becoming an American citizen"
+      },
+      { 
+        name: "Hans Mueller", 
+        origin: "from Germany", 
+        needs: "Job training in carpentry",
+        emoji: "🇩🇪",
+        preferredRoom: "workshop",
+        story: "Skilled craftsman seeking work"
+      },
+      { 
+        name: "Anna Kowalski", 
+        origin: "from Poland", 
+        needs: "Childcare while working",
+        emoji: "🇵🇱",
+        preferredRoom: "nursery",
+        story: "Single mother working in factory"
+      },
+      { 
+        name: "Giuseppe Bernardi", 
+        origin: "from Italy", 
+        needs: "Medical care for family",
+        emoji: "🇮🇹",
+        preferredRoom: "clinic",
+        story: "Father worried about children's health"
+      },
+      { 
+        name: "Olga Petrov", 
+        origin: "from Russia", 
+        needs: "Cooking and nutrition classes",
+        emoji: "🇷🇺",
+        preferredRoom: "kitchen",
+        story: "Learning American cooking methods"
+      },
+      { 
+        name: "Chen Wei", 
+        origin: "from China", 
+        needs: "Books and quiet study space",
+        emoji: "🇨🇳",
+        preferredRoom: "library",
+        story: "Student preparing for exams"
+      },
+      { 
+        name: "Bridget O'Brien", 
+        origin: "from Ireland", 
+        needs: "Help learning to read",
+        emoji: "🇮🇪",
+        preferredRoom: "library",
+        story: "Never had chance for education"
+      },
+      { 
+        name: "Erik Larsen", 
+        origin: "from Norway", 
+        needs: "Training for factory work",
+        emoji: "🇳🇴",
+        preferredRoom: "workshop",
+        story: "Fisherman learning new skills"
+      },
+      { 
+        name: "Sofia Volkov", 
+        origin: "from Russia", 
+        needs: "Childcare and English help",
+        emoji: "🇷🇺",
+        preferredRoom: "nursery",
+        story: "Recent widow with young children"
+      },
+      { 
+        name: "Antonio Silva", 
+        origin: "from Portugal", 
+        needs: "Health care and medicine",
+        emoji: "🇵🇹",
+        preferredRoom: "clinic",
+        story: "Injured dock worker needing treatment"
+      }
+    ];
+
+    // Initialize the game
+    function initGame() {
+      createAudioSystem();
+      createUrbanBackground();
+      generateInitialVisitors();
+      playBackgroundMusic();
+    }
+
+    function createAudioSystem() {
+      try {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        musicGain = audioContext.createGain();
+        sfxGain = audioContext.createGain();
+        
+        musicGain.gain.value = 0.3;
+        sfxGain.gain.value = 0.4;
+        
+        musicGain.connect(audioContext.destination);
+        sfxGain.connect(audioContext.destination);
+      } catch (error) {
+        console.warn('Audio not available:', error);
+      }
+    }
+
+    function playSound(soundType) {
+      if (!audioContext) return;
+      
+      const frequencies = {
+        help: 523,        // C note - warm helping sound
+        welcome: 659,     // E note - welcoming sound
+        service: 440,     // A note - service provided
+        kindness: 784,    // G note - kindness meter increase
+        success: 880      // High A - success sound
+      };
+
+      const freq = frequencies[soundType] || 440;
+      
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(sfxGain);
+      
+      oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
+      oscillator.type = 'sine';
+      
+      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.05);
+      gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.6);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.6);
+    }
+
+    function playBackgroundMusic() {
+      console.log('Playing background music: ./textures/music/settlement_house.mp3');
+    }
+
+    function createUrbanBackground() {
+      const container = document.getElementById('urban-background');
+      
+      // Create smoke stacks with smoke
+      for (let i = 0; i < 4; i++) {
+        const stack = document.createElement('div');
+        stack.className = 'smoke-stack';
+        stack.style.left = (20 + i * 25) + '%';
+        stack.style.bottom = '10%';
+        container.appendChild(stack);
+        
+        // Add smoke particles
+        setInterval(() => {
+          const smoke = document.createElement('div');
+          smoke.className = 'smoke';
+          smoke.style.left = (20 + i * 25) + '%';
+          smoke.style.bottom = '15%';
+          smoke.style.animationDelay = Math.random() * 2 + 's';
+          container.appendChild(smoke);
+          
+          setTimeout(() => {
+            if (smoke.parentNode) {
+              smoke.parentNode.removeChild(smoke);
+            }
+          }, 8000);
+        }, 2000 + Math.random() * 3000);
+      }
+      
+      // Create walking immigrants
+      setInterval(() => {
+        const immigrant = document.createElement('div');
+        immigrant.className = 'immigrant';
+        immigrant.innerHTML = ['👨‍👩‍👧', '👨‍👩‍👧‍👦', '👩‍👧', '👨‍👧‍👦', '👪'][Math.floor(Math.random() * 5)];
+        immigrant.style.bottom = (5 + Math.random() * 10) + '%';
+        immigrant.style.animationDuration = (10 + Math.random() * 10) + 's';
+        container.appendChild(immigrant);
+        
+        setTimeout(() => {
+          if (immigrant.parentNode) {
+            immigrant.parentNode.removeChild(immigrant);
+          }
+        }, 25000);
+      }, 8000);
+    }
+
+    function generateInitialVisitors() {
+      // Start with 3 visitors
+      for (let i = 0; i < 3; i++) {
+        addRandomVisitor();
+      }
+    }
+
+    function addRandomVisitor() {
+      const profile = visitorProfiles[Math.floor(Math.random() * visitorProfiles.length)];
+      const visitor = {
+        id: Date.now() + Math.random(),
+        ...profile,
+        helpLevel: 0,
+        maxHelp: 3 + Math.floor(Math.random() * 3),
+        isFamily: Math.random() > 0.6
+      };
+      
+      visitorQueue.push(visitor);
+      displayVisitor(visitor);
+    }
+
+    function displayVisitor(visitor) {
+      const queue = document.getElementById('visitor-queue');
+      
+      const visitorCard = document.createElement('div');
+      visitorCard.className = 'visitor-card';
+      visitorCard.dataset.id = visitor.id;
+      visitorCard.onclick = () => assignVisitorToRoom(visitor.id);
+      
+      visitorCard.innerHTML = `
+        <div class="visitor-emoji">${visitor.emoji}</div>
+        <div class="visitor-name">${visitor.name}</div>
+        <div class="visitor-origin">${visitor.origin}</div>
+        <div class="visitor-needs">${visitor.needs}</div>
+      `;
+      
+      queue.appendChild(visitorCard);
+    }
+
+    function selectRoom(roomType) {
+      if (!gameStarted) return;
+      
+      // Remove active class from all rooms
+      document.querySelectorAll('.room').forEach(room => {
+        room.classList.remove('active');
+      });
+      
+      // Add active class to selected room
+      document.querySelector(`[data-room="${roomType}"]`).classList.add('active');
+      selectedRoom = roomType;
+      
+      playSound('welcome');
+    }
+
+    function assignVisitorToRoom(visitorId) {
+      if (!selectedRoom || !gameStarted) {
+        playSound('help');
+        return;
+      }
+      
+      const visitor = visitorQueue.find(v => v.id === visitorId);
+      if (!visitor) return;
+      
+      // Check room capacity
+      if (roomOccupancy[selectedRoom] >= roomCapacities[selectedRoom]) {
+        // Room is full - play different sound
+        playSound('help');
+        return;
+      }
+      
+      // Remove visitor from queue
+      const visitorIndex = visitorQueue.findIndex(v => v.id === visitorId);
+      visitorQueue.splice(visitorIndex, 1);
+      
+      // Remove from display
+      const visitorCard = document.querySelector(`[data-id="${visitorId}"]`);
+      if (visitorCard) {
+        visitorCard.classList.add('helping');
+        setTimeout(() => {
+          if (visitorCard.parentNode) {
+            visitorCard.parentNode.removeChild(visitorCard);
+          }
+        }, 500);
+      }
+      
+      // Add to room
+      addVisitorToRoom(visitor, selectedRoom);
+      
+      // Update stats
+      peopleHelped++;
+      servicesProvided++;
+      if (visitor.isFamily) {
+        familiesSupported++;
+      }
+      
+      // Bonus points for matching preferred room
+      const kindnessBonus = visitor.preferredRoom === selectedRoom ? 15 : 10;
+      kindnessLevel += kindnessBonus;
+      
+      updateStats();
+      updateKindnessMeter();
+      
+      playSound('service');
+      console.log(`Playing visitor help sound: ./textures/sfx/visitor_helped.wav`);
+      
+      // Check for completion
+      if (kindnessLevel >= 100) {
+        setTimeout(completeSettlement, 2000);
+      }
+    }
+
+    function addVisitorToRoom(visitor, roomType) {
+      roomOccupancy[roomType]++;
+      
+      // Add visual representation to room
+      const roomVisitors = document.getElementById(`${roomType}-visitors`);
+      const visitorElement = document.createElement('div');
+      visitorElement.className = 'visitor';
+      visitorElement.innerHTML = visitor.emoji;
+      visitorElement.title = `${visitor.name} - ${visitor.needs}`;
+      visitorElement.style.backgroundColor = getVisitorColor(visitor.origin);
+      
+      roomVisitors.appendChild(visitorElement);
+      
+      // Update room capacity display
+      const roomCapacityElement = document.querySelector(`[data-room="${roomType}"] .room-capacity`);
+      roomCapacityElement.textContent = `${roomOccupancy[roomType]}/${roomCapacities[roomType]}`;
+      
+      // Schedule visitor to eventually leave and make space for others
+      setTimeout(() => {
+        if (visitorElement.parentNode) {
+          visitorElement.style.animation = 'visitor-arrive 0.5s reverse';
+          setTimeout(() => {
+            if (visitorElement.parentNode) {
+              visitorElement.parentNode.removeChild(visitorElement);
+              roomOccupancy[roomType] = Math.max(0, roomOccupancy[roomType] - 1);
+              roomCapacityElement.textContent = `${roomOccupancy[roomType]}/${roomCapacities[roomType]}`;
+            }
+          }, 500);
+        }
+      }, 10000 + Math.random() * 15000); // Stay 10-25 seconds
+    }
+
+    function getVisitorColor(origin) {
+      const colors = {
+        'from Italy': '#FF6B6B',
+        'from Germany': '#4ECDC4',
+        'from Poland': '#45B7D1',
+        'from Russia': '#96CEB4',
+        'from China': '#FFEAA7',
+        'from Ireland': '#74B9FF',
+        'from Norway': '#A29BFE',
+        'from Portugal': '#FD79A8'
+      };
+      return colors[origin] || '#DDA0DD';
+    }
+
+    function startSettlement() {
+      if (gameStarted) return;
+      
+      gameStarted = true;
+      startTime = Date.now();
+      
+      document.getElementById('start-settlement').disabled = true;
+      document.getElementById('start-settlement').textContent = 'Hull House is Open';
+      document.getElementById('welcome-visitors').disabled = false;
+      
+      // Start visitor generation timer
+      gameInterval = setInterval(() => {
+        if (visitorQueue.length < 8 && Math.random() > 0.3) {
+          addRandomVisitor();
+        }
+      }, 3000);
+      
+      playSound('welcome');
+      console.log('Playing settlement opening: ./textures/sfx/settlement_open.wav');
+    }
+
+    function welcomeNewVisitors() {
+      if (!gameStarted) return;
+      
+      // Add 2-3 new visitors
+      const newVisitors = 2 + Math.floor(Math.random() * 2);
+      for (let i = 0; i < newVisitors; i++) {
+        setTimeout(() => {
+          addRandomVisitor();
+        }, i * 500);
+      }
+      
+      playSound('welcome');
+      console.log('Playing new arrivals sound: ./textures/sfx/new_arrivals.wav');
+      
+      // Temporary disable to prevent spam
+      document.getElementById('welcome-visitors').disabled = true;
+      setTimeout(() => {
+        if (gameStarted) {
+          document.getElementById('welcome-visitors').disabled = false;
+        }
+      }, 5000);
+    }
+
+    function updateStats() {
+      document.getElementById('people-helped').textContent = peopleHelped;
+      document.getElementById('services-provided').textContent = servicesProvided;
+      document.getElementById('families-supported').textContent = familiesSupported;
+    }
+
+    function updateKindnessMeter() {
+      const kindnessFill = document.getElementById('kindness-fill');
+      const kindnessText = document.getElementById('kindness-text');
+      
+      const percentage = Math.min(100, kindnessLevel);
+      kindnessFill.style.width = percentage + '%';
+      
+      if (percentage >= 90) {
+        kindnessText.textContent = `${Math.round(percentage)}% - Transforming the community!`;
+      } else if (percentage >= 70) {
+        kindnessText.textContent = `${Math.round(percentage)}% - Making a real difference!`;
+      } else if (percentage >= 50) {
+        kindnessText.textContent = `${Math.round(percentage)}% - Building trust and hope`;
+      } else if (percentage >= 25) {
+        kindnessText.textContent = `${Math.round(percentage)}% - Spreading kindness`;
+      } else {
+        kindnessText.textContent = `${Math.round(percentage)}% - Begin your mission of kindness`;
+      }
+      
+      playSound('kindness');
+    }
+
+    function completeSettlement() {
+      clearInterval(gameInterval);
+      
+      const elapsed = Date.now() - startTime;
+      const minutes = Math.floor(elapsed / 60000);
+      const seconds = Math.floor((elapsed % 60000) / 1000);
+      
+      document.getElementById('final-impact').textContent = Math.round(kindnessLevel);
+      document.getElementById('final-helped').textContent = peopleHelped;
+      document.getElementById('final-services').textContent = servicesProvided;
+      document.getElementById('completion-screen').style.display = 'flex';
+      
+      playSound('success');
+      console.log('Playing settlement completion: ./textures/sfx/kindness_complete.wav');
+    }
+
+    function resetSettlement() {
+      // Reset game state
+      gameStarted = false;
+      startTime = null;
+      kindnessLevel = 0;
+      peopleHelped = 0;
+      servicesProvided = 0;
+      familiesSupported = 0;
+      selectedRoom = null;
+      visitorQueue = [];
+      
+      // Reset room occupancy
+      Object.keys(roomOccupancy).forEach(room => {
+        roomOccupancy[room] = 0;
+      });
+      
+      if (gameInterval) {
+        clearInterval(gameInterval);
+        gameInterval = null;
+      }
+      
+      // Reset UI
+      document.getElementById('start-settlement').disabled = false;
+      document.getElementById('start-settlement').textContent = 'Open Hull House';
+      document.getElementById('welcome-visitors').disabled = true;
+      document.getElementById('completion-screen').style.display = 'none';
+      
+      // Clear rooms
+      document.querySelectorAll('.room').forEach(room => {
+        room.classList.remove('active');
+        const capacity = room.querySelector('.room-capacity');
+        const roomType = room.dataset.room;
+        capacity.textContent = `0/${roomCapacities[roomType]}`;
+        
+        const visitors = room.querySelector('.room-visitors');
+        visitors.innerHTML = '';
+      });
+      
+      // Clear visitor queue
+      document.getElementById('visitor-queue').innerHTML = '';
+      
+      // Reset stats
+      updateStats();
+      updateKindnessMeter();
+      
+      // Generate new initial visitors
+      generateInitialVisitors();
+      
+      console.log('Playing reset sound: ./textures/sfx/settlement_reset.wav');
+    }
+
+    function helpMore() {
+      resetSettlement();
+    }
+
+    function returnToElisphere() {
+      if (window.parent && window.parent.game) {
+        window.parent.game.returnFromMiniGame();
+      } else {
+        alert("Returning to Elisphere... (This would integrate with the main game)");
+        window.close();
+      }
+    }
+
+    // Initialize the game when the page loads
+    window.addEventListener('load', () => {
+      // Resume audio context on user interaction
+      document.addEventListener('click', () => {
+        if (audioContext && audioContext.state === 'suspended') {
+          audioContext.resume();
+        }
+      }, { once: true });
+      
+      initGame();
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (!gameStarted) {
+        if (e.code === 'Space') {
+          e.preventDefault();
+          startSettlement();
+        }
+        return;
+      }
+      
+      // Room selection shortcuts (1-6)
+      if (e.code >= 'Digit1' && e.code <= 'Digit6') {
+        e.preventDefault();
+        const rooms = ['nursery', 'kitchen', 'classroom', 'clinic', 'workshop', 'library'];
+        const roomIndex = parseInt(e.code.slice(-1)) - 1;
+        if (roomIndex < rooms.length) {
+          selectRoom(rooms[roomIndex]);
+        }
+      }
+      
+      // Welcome new visitors with W key
+      if (e.code === 'KeyW') {
+        e.preventDefault();
+        welcomeNewVisitors();
+      }
+    });
+
+    // Add auto-save of visitor stories for educational value
+    function showVisitorStory(visitorId) {
+      const visitor = visitorQueue.find(v => v.id === visitorId);
+      if (visitor && visitor.story) {
+        // Could show tooltip or modal with their story
+        console.log(`${visitor.name}: ${visitor.story}`);
+      }
+    }
+
+    // Add periodic encouragement messages
+    setInterval(() => {
+      if (gameStarted && peopleHelped > 0) {
+        const encouragements = [
+          "Your kindness is making a real difference!",
+          "Every person helped strengthens the community!",
+          "Jane Addams would be proud of your compassion!",
+          "Small acts of kindness create lasting change!"
+        ];
+        
+        console.log(encouragements[Math.floor(Math.random() * encouragements.length)]);
+      }
+    }, 30000); // Every 30 seconds
+
+    // Enhanced visitor management - add special events
+    function triggerSpecialEvent() {
+      if (!gameStarted) return;
+      
+      const events = [
+        {
+          type: 'family_crisis',
+          message: 'Large family arrives needing urgent help!',
+          effect: () => {
+            for (let i = 0; i < 3; i++) {
+              addRandomVisitor();
+            }
+          }
+        },
+        {
+          type: 'community_celebration',
+          message: 'Former visitors return to volunteer!',
+          effect: () => {
+            kindnessLevel += 20;
+            updateKindnessMeter();
+          }
+        }
+      ];
+      
+      if (Math.random() > 0.8) {
+        const event = events[Math.floor(Math.random() * events.length)];
+        console.log(event.message);
+        event.effect();
+        playSound('welcome');
+      }
+    }
+
+    // Trigger special events occasionally
+    setInterval(triggerSpecialEvent, 45000); // Every 45 seconds
+  </script>
+</body>
+</html>

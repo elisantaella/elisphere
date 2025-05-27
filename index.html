@@ -159,6 +159,71 @@
       from { opacity: 0; }
       to { opacity: 1; }
     }
+/* Add these updated styles to index.html in the <style> section */
+
+.dialogue-option {
+  background-color: rgba(0, 0, 0, 0.7);
+  border: 2px solid #4CAF50;
+  border-radius: 5px;
+  color: white;
+  padding: 12px 20px;
+  margin: 8px;
+  font-family: 'Minecraft', monospace;
+  transition: all 0.2s ease;
+  transform-origin: center;
+  opacity: 0;
+  animation: optionFadeIn 0.3s forwards;
+  animation-delay: calc(var(--delay) * 0.1s);
+  text-align: center;
+  flex: 0 1 auto; /* Don't grow to fill space, only shrink if needed */
+  min-width: 120px; /* Minimum width */
+  max-width: 280px; /* Maximum width - prevent options from being too wide */
+  white-space: normal; /* Allow text wrapping */
+}
+
+.dialogue-option.selected {
+  background-color: rgba(76, 175, 80, 0.3);
+  border-color: #fff;
+  transform: scale(1.05);
+  box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+  text-shadow: 0 0 5px white;
+}
+
+@keyframes optionFadeIn {
+  from { 
+    opacity: 0; 
+    transform: translateY(20px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}
+
+/* Add media queries for better responsiveness */
+@media screen and (max-width: 768px) {
+  .dialogue-option {
+    padding: 10px 15px;
+    font-size: 14px;
+    min-width: 100px;
+    max-width: 200px;
+  }
+  
+  #dialogue-options {
+    width: 95% !important;
+  }
+}
+
+/* Ensure dialogue options wrapper works well */
+.dialogue-option-wrapper {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 15px;
+  width: 100%;
+}
   </style>
 </head>
 <body>
@@ -1268,5 +1333,7 @@ document.addEventListener('keydown', function(event) {
   }
 });
   </script>
+  <script src="./dialogue.js"></script>
+  <script src="./musicloader.js"></script>
 </body>
 </html>

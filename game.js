@@ -2,65 +2,91 @@
 
 // Main game class
 class HappinessToolkitGame {
-  constructor() {
-    this.strategyInfoShown = false;
-    this.state = GameState.MAIN_MENU;
-    this.scene = null;
-    this.camera = null;
-    this.renderer = null;
-    this.controls = null;
-    this.player = {
-      height: 1.8,
-      speed: 0.1,
-      turnSpeed: 0.05,
-      canMove: false
-    };
-    this.moveForward = false;
-    this.moveBackward = false;
-    this.moveLeft = false;
-    this.moveRight = false;
-    this.currentStrategy = null;
-    this.currentDialogueIndex = 0;
-    this.assetsLoaded = false;
-    this.interactiveObjects = [];
-    this.clock = new THREE.Clock();
-    
-    // Create UI
-    this.ui = new GameUI(this);
-    
-    // Initialize the game
-    this.init();
+  // Add to the constructor in game.js
+
+ 
+constructor() {
+  this.strategyInfoShown = false;
+  this.state = GameState.MAIN_MENU;
+  this.scene = null;
+  this.camera = null;
+  this.renderer = null;
+  this.controls = null;
+  this.player = {
+    height: 1.8,
+    speed: 0.1,
+    turnSpeed: 0.05,
+    canMove: false
+  };
+  this.moveForward = false;
+  this.moveBackward = false;
+  this.moveLeft = false;
+  this.moveRight = false;
+  this.currentStrategy = null;
+  this.currentDialogueIndex = 0;
+  this.assetsLoaded = false;
+  this.interactiveObjects = [];
+  this.clock = new THREE.Clock();
+  
+  // Add pause related properties
+  this.isPaused = false;
+  this.pauseScreen = null;
+  this.musicVolumeBeforePause = 0.5;
+  
+  // Add flag to track if player has met the guide
+  this.hasMetGuide = false;
+  
+  // Create UI
+  this.ui = new GameUI(this);
+  
+  // Initialize the game
+  this.init();
+}
+
+init() {
+  // Initialize the scene
+  this.scene = new THREE.Scene();
+  this.scene.background = new THREE.Color(0x87ceeb); // Sky blue background
+  
+  // Set up the camera
+  this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+  this.camera.position.y = this.player.height;
+
+  // Set up the renderer
+  this.renderer = new THREE.WebGLRenderer({ antialias: true });
+  this.renderer.setSize(window.innerWidth, window.innerHeight);
+  this.renderer.shadowMap.enabled = true;
+  document.body.appendChild(this.renderer.domElement);
+ // Try to lock on canvas click
+  if (this.state !== GameState.MAIN_MENU && !this.controls.isLocked) {
+    console.log("Canvas clicked, requesting pointer lock");
+    this.controls.lock();
+  }
+  // Set up controls
+  this.controls = new THREE.PointerLockControls(this.camera, document.body);
+  
+  // Initialize environment builder
+  this.environmentBuilder = new EnvironmentBuilder(this);
+
+  // Event listeners
+  window.addEventListener('resize', this.onWindowResize.bind(this));
+  document.addEventListener('keydown', this.onKeyDown.bind(this));
+  document.addEventListener('keyup', this.onKeyUp.bind(this));
+
+  // Create UI before dialogue system
+  this.ui = new GameUI(this);
+  
+  // Now initialize dialogue system after UI is created
+  if (typeof DialogueSystem !== 'undefined') {
+    this.dialogueSystem = new DialogueSystem(this);
+    console.log("DialogueSystem initialized successfully");
+  } else {
+    console.error("DialogueSystem is not defined! Make sure dialogue.js is loaded before game.js");
   }
 
-  init() {
-    // Initialize the scene
-    this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x87ceeb); // Sky blue background
-    
-    // Set up the camera
-    this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    this.camera.position.y = this.player.height;
-
-    // Set up the renderer
-    this.renderer = new THREE.WebGLRenderer({ antialias: true });
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.shadowMap.enabled = true;
-    document.body.appendChild(this.renderer.domElement);
-
-    // Set up controls
-    this.controls = new THREE.PointerLockControls(this.camera, document.body);
-    
-    // Initialize environment builder
-    this.environmentBuilder = new EnvironmentBuilder(this);
-
-    // Event listeners
-    window.addEventListener('resize', this.onWindowResize.bind(this));
-    document.addEventListener('keydown', this.onKeyDown.bind(this));
-    document.addEventListener('keyup', this.onKeyUp.bind(this));
-
-    // Use the loaded assets
-    this.setupAssetsAndLoad();
-  }
+  // Use the loaded assets
+  this.setupAssetsAndLoad();
+}
 
   async setupAssetsAndLoad() {
     try {
@@ -87,15 +113,25 @@ class HappinessToolkitGame {
     }
   }
 
-startGame() {
+// Modify the startGame method to prompt for name:
+// In game.js, update the startGame method:
+async startGame() {
   console.log("startGame called");
+  
   this.ui.hideMenu();
   
   console.log("About to lock controls");
-  // Lock pointer and enable controls
-  this.controls.lock();
+  
+  // Try to lock pointer controls, but add error handling
+  try {
+    this.controls.lock();
+  } catch (error) {
+    console.error("Error locking controls:", error);
+  }
+  
+  // Explicitly set player movement flags
   this.player.canMove = true;
-
+  
   console.log("Setting state to LOBBY");
   // Change state to lobby
   this.state = GameState.LOBBY;
@@ -117,18 +153,50 @@ startGame() {
     }, 10000);
   }
   
-  // Add pointer lock event listeners
-  this.controls.addEventListener('lock', () => {
-    this.player.canMove = true;
-    this.ui.hideDialogue();
-  });
-
-  this.controls.addEventListener('unlock', () => {
-    this.player.canMove = false;
-    if (this.state !== GameState.MAIN_MENU) {
-      this.ui.showMenu();
+  // Add pointer lock event listeners - use proper binding
+  this.controls.addEventListener('lock', this.onPointerLock.bind(this));
+  this.controls.addEventListener('unlock', this.onPointerUnlock.bind(this));
+  
+  // Switch to gameplay music
+  if (window.musicLoader) {
+    window.musicLoader.handleGameStateChange(GameState.LOBBY);
+  }
+  
+  // Double-check controls are locked with a slight delay
+  setTimeout(() => {
+    if (!this.controls.isLocked) {
+      console.log("Controls not locked after starting, trying again...");
+      try {
+        this.controls.lock();
+      } catch (e) {
+        console.error("Second attempt to lock controls failed:", e);
+      }
     }
-  });
+  }, 500);
+}
+
+// Add explicit handler methods for pointer events
+onPointerLock() {
+  console.log("Pointer locked successfully");
+  if (!this.isPaused) {
+    this.player.canMove = true;
+    if (this.ui && this.ui.dialogueBox) {
+      this.ui.hideDialogue();
+    }
+  }
+}
+
+onPointerUnlock() {
+  console.log("Pointer unlocked");
+  // Only disable movement if not paused
+  if (!this.isPaused) {
+    this.player.canMove = false;
+    
+    // Only show menu if we're not paused and not in dialogue
+    if (this.state !== GameState.MAIN_MENU && this.ui && this.ui.dialogueBox && this.ui.dialogueBox.style.display !== 'block') {
+      this.pauseGame();
+    }
+  }
 }
 // Create a better controls help box that appears only during gameplay
 createGameplayControls() {
@@ -172,11 +240,19 @@ createGameplayControls() {
 
   // Update the loadMainMenu method to hide any controls
 loadMainMenu() {
+    // Check if we're already at the main menu to avoid duplication
+  if (this.state === GameState.MAIN_MENU && this.ui.menu.style.display === 'flex') {
+    console.log("Main menu already loaded, skipping duplication");
+    return;
+  }
   // Clear any existing scene objects
   while(this.scene.children.length > 0) {
     this.scene.remove(this.scene.children[0]);
   }
-  
+  // Switch to main menu music
+if (window.musicLoader) {
+  window.musicLoader.handleGameStateChange(GameState.MAIN_MENU);
+}
   // Position camera to better view the symbols
   this.camera.position.set(0, 5, 20);
   this.camera.lookAt(0, 0, 0);
@@ -365,6 +441,10 @@ loadLobby() {
   while(this.scene.children.length > 0) {
     this.scene.remove(this.scene.children[0]);
   }
+  // Ensure proper music is playing
+if (window.musicLoader) {
+  window.musicLoader.handleGameStateChange(GameState.GAMEPLAY);
+}
   this.interactiveObjects = [];
   
   // Reset camera position and set it to face the OPPOSITE direction (180 degrees)
@@ -622,17 +702,88 @@ createPavilion() {
   spotlight.castShadow = true;
   this.scene.add(spotlight);
   
-  // Add interaction trigger for the NPC
+    // Add interaction trigger for the NPC
   const npcInteraction = {
-    position: new THREE.Vector3(npc.position.x, npc.position.y + 1, npc.position.z),
-    radius: 5, // Larger interaction radius
-    characterObject: npc, // Store reference to character for rotation
-    onInteract: () => {
-      // For standalone dialogues, set currentStrategy to null
-      this.currentStrategy = null;
-      this.ui.showDialogueWithTyping("Welcome to your Happiness Toolkit! I'm your guide. Explore the five portal areas around you to learn about different happiness strategies and their connections to US history. Approach each character and press 'E' to interact. Use WASD to move and your mouse to look around.\n\nReady to begin your journey?");
+  position: new THREE.Vector3(npc.position.x, npc.position.y + 1, npc.position.z),
+  radius: 5, // Larger interaction radius
+  characterObject: npc, // Store reference to character for rotation
+  onInteract: async () => {
+    // For standalone dialogues, set currentStrategy to null
+    this.currentStrategy = null;
+    
+    // If this is the first interaction with the guide, prompt for name
+    if (!this.hasMetGuide) {
+      // Show initial greeting before asking for name
+      await this.dialogueSystem.showNPCDialogue(
+        "Welcome, traveler! I'm your guide to this world of happiness strategies. Before we begin our journey together, may I ask your name?",
+        "Your Guide",
+        "#9370db"
+      );
+      
+      // Now prompt for the name
+      try {
+        // Use existing dialogue system name prompt
+        this.playerName = await this.dialogueSystem.promptForName();
+        console.log(`Player name set to: ${this.playerName}`);
+        
+        // Mark that the player has met the guide
+        this.hasMetGuide = true;
+        
+        // Show first-time welcome with the player's name
+        await this.dialogueSystem.showNPCDialogue(
+          `It's wonderful to meet you, {playerName}! Welcome to your personalized Happiness Toolkit.`,
+          "Your Guide",
+          "#9370db"
+        );
+      } catch (error) {
+        console.error("Error getting player name:", error);
+        // Use default name if there was an error
+        this.playerName = "Player";
+        this.hasMetGuide = true;
+      }
     }
-  };
+    
+    // Continue with regular dialogue
+    await this.dialogueSystem.showNPCDialogue(
+      `Welcome to your Happiness Toolkit, {playerName}! Explore the five portal areas around you to learn about different happiness strategies and their connections to US history.`, 
+      "Your Guide",
+      "#9370db",
+      [
+        { 
+          text: "Tell me more about this place.", 
+          callback: async () => {
+            await this.dialogueSystem.showNPCDialogue(
+              "This world connects evidence-based happiness strategies with pivotal moments in American history. Each area represents a different approach to well-being, embodied by a historical figure.",
+              "Your Guide",
+              "#9370db",
+              [
+                { 
+                  text: "How do I explore these areas?", 
+                  callback: async () => {
+                    await this.dialogueSystem.showNPCDialogue(
+                      "Use WASD to move and your mouse to look around. Approach each character and press 'E' to interact. Each historical figure will teach you about their happiness strategy and offer you a chance to practice it!",
+                      "Your Guide",
+                      "#9370db",
+                      [
+                        { text: "I'm ready to explore!", callback: null },
+                        { text: "Thanks for the information.", callback: null }
+                      ]
+                    );
+                  }
+                },
+                { text: "I'll figure it out on my own.", callback: null }
+              ]
+            );
+          }
+        },
+        { 
+          text: "I'm ready to explore!", 
+          callback: null
+        }
+      ]
+    );
+  }
+};
 
   // Create a nameplate for the guide and store reference
   const nameplate = this.createCharacterNameplate(
@@ -713,16 +864,16 @@ createStrategyPortals() {
     
     // Add interaction trigger - use character's actual position
     const portalInteraction = {
-      position: new THREE.Vector3(character.position.x, character.position.y + 1, character.position.z),
-      radius: 5, // Increased interaction radius
-      strategy: strategy,
-      characterObject: character, // Store reference to character for rotation
-      onInteract: () => {
-        this.currentStrategy = strategy;
-        this.currentDialogueIndex = 0;
-        this.showNextStrategyDialogue();
-      }
-    };
+  position: new THREE.Vector3(character.position.x, character.position.y + 1, character.position.z),
+  radius: 5, // Increased interaction radius
+  strategy: strategy,
+  characterObject: character, // Store reference to character for rotation
+  onInteract: async () => {
+    // Use the new enhanced conversation system
+    await this.startStrategyConversation(strategy);
+  }
+};
+
     
     // Create nameplate and store reference in the interaction object
     const nameplate = this.createCharacterNameplate(
@@ -1030,6 +1181,10 @@ createPortalArch(x, z, angle, strategy) {
     while(this.scene.children.length > 0) { 
       this.scene.remove(this.scene.children[0]); 
     }
+    // Ensure proper music is playing for strategy areas
+if (window.musicLoader) {
+  window.musicLoader.handleGameStateChange(GameState.GAMEPLAY);
+}
     this.interactiveObjects = [];
     
     // Reset camera position
@@ -1166,7 +1321,90 @@ createPortalArch(x, z, angle, strategy) {
     }
   }
 
-  // Fix for createStrategyCharacter method to create and associate nameplate
+  
+  // Add this new method to HappinessToolkitGame class
+beginStrategyDialogue(strategy) {
+  // Make sure we have the dialogue system available
+  if (!this.dialogueSystem) {
+    console.error("Dialogue system not initialized!");
+    return;
+  }
+  
+  // Show initial greeting and options
+  this.dialogueSystem.showNPCDialogue(
+    `Hello {playerName}, I'm ${strategy.character}. Would you like to learn about ${strategy.name}?`,
+    strategy.character,
+    this.getStrategyColor(strategy.name).toString(),
+    [
+      { 
+        text: "Yes, tell me about it!", 
+        callback: () => this.showStrategyInfo(strategy, 0) // Start with the first dialogue
+      },
+      { 
+        text: "Not right now, thanks.", 
+        callback: null // Simply closes the dialogue
+      }
+    ]
+  );
+}
+
+// Add this method for showing strategy dialogues sequentially
+showStrategyInfo(strategy, dialogueIndex) {
+  // Check if we've reached the end of dialogues
+  if (dialogueIndex >= strategy.dialogues.length) {
+    // All dialogues shown, offer to show detailed info
+    const infoText = 
+      `Strategy: ${strategy.name}\n\n` +
+      `Description: ${strategy.description}\n\n` +
+      `Historical Connection: ${strategy.historicalConnection}\n\n` +
+      `Historical Context: ${strategy.historicalContext}\n\n` +
+      `Implementation: ${strategy.implementation}`;
+    
+    this.dialogueSystem.showNPCDialogue(
+      infoText,
+      strategy.character,
+      this.getStrategyColor(strategy.name).toString(),
+      [
+        { text: "Thank you for sharing this knowledge!", callback: null },
+        { text: "I'll try to apply this in my life.", callback: null }
+      ]
+    );
+    return;
+  }
+  
+  // Show the current dialogue
+  this.dialogueSystem.showNPCDialogue(
+    strategy.dialogues[dialogueIndex],
+    strategy.character,
+    this.getStrategyColor(strategy.name).toString(),
+    dialogueIndex === strategy.dialogues.length - 1 
+      ? [
+          // Last dialogue - offer to show more details
+          { 
+            text: "Tell me more details.", 
+            callback: () => this.showStrategyInfo(strategy, strategy.dialogues.length) // Show the detailed info
+          },
+          { 
+            text: "That's enough for now, thanks.", 
+            callback: null // Simply closes the dialogue
+          }
+        ] 
+      : [
+          // Not the last dialogue - continue to next
+          { 
+            text: "Please continue.", 
+            callback: () => this.showStrategyInfo(strategy, dialogueIndex + 1)  // Show next dialogue
+          },
+          {
+            text: "Skip to the details.", 
+            callback: () => this.showStrategyInfo(strategy, strategy.dialogues.length)  // Skip to detailed info
+          }
+        ]
+  );
+}  
+// Updated sections for game.js - Character interaction methods
+
+// Replace the existing createStrategyCharacter method with this enhanced version:
 createStrategyCharacter(strategy) {
   // Create a historical character based on the strategy
   let character;
@@ -1206,16 +1444,18 @@ createStrategyCharacter(strategy) {
   spotlight.castShadow = true;
   this.scene.add(spotlight);
   
-  // Add interaction trigger
+  // Add interaction trigger with NEW enhanced dialogue system
   const characterInteraction = {
     position: new THREE.Vector3(0, 1.5, 0),
     radius: 5, // Larger interaction radius
     strategy: strategy,
     characterObject: character, // Store reference to character
-    onInteract: () => {
+    onInteract: async () => {
+      // Set current strategy for reference
       this.currentStrategy = strategy;
-      this.currentDialogueIndex = 0;
-      this.showNextStrategyDialogue();
+      
+      // Use the new enhanced dialogue system
+      await this.startStrategyConversation(strategy);
     }
   };
   
@@ -1231,7 +1471,357 @@ createStrategyCharacter(strategy) {
   
   this.interactiveObjects.push(characterInteraction);
 }
+
+// Add this NEW method to handle strategy conversations with mini-game integration:
+async startStrategyConversation(strategy) {
+  const characterName = strategy.character;
+  const strategyName = strategy.name;
   
+  // Initial greeting with enhanced options
+  await this.dialogueSystem.showNPCDialogue(
+    `Hello {playerName}, I'm ${characterName}. I'd love to share my knowledge about ${strategyName} with you.`,
+    characterName,
+    this.getStrategyColor(strategyName).toString(),
+    [
+      { 
+        text: "Tell me about your strategy", 
+        callback: async () => {
+          // Show strategy information first
+          await this.showStrategyInformation(strategy);
+        }
+      },
+      { 
+        text: "Let's practice together!", 
+        callback: async () => {
+          // Launch mini-game directly
+          await this.offerMiniGameExperience(strategy);
+        }
+      },
+      { 
+        text: "Not right now, thanks", 
+        callback: null 
+      }
+    ]
+  );
+}
+
+// Add this NEW method to show strategy information with mini-game option:
+async showStrategyInformation(strategy) {
+  const characterName = strategy.character;
+  const strategyName = strategy.name;
+  
+  // Show detailed strategy information
+  const infoText = 
+    `Strategy: ${strategy.name}\n\n` +
+    `Description: ${strategy.description}\n\n` +
+    `Historical Connection: ${strategy.historicalConnection}\n\n` +
+    `Historical Context: ${strategy.historicalContext}\n\n` +
+    `Implementation: ${strategy.implementation}`;
+  
+  await this.dialogueSystem.showNPCDialogue(
+    infoText,
+    characterName,
+    this.getStrategyColor(strategyName).toString(),
+    [
+      { 
+        text: "Now let's practice together!", 
+        callback: async () => {
+          await this.offerMiniGameExperience(strategy);
+        }
+      },
+      { 
+        text: "Thank you for sharing this wisdom", 
+        callback: null 
+      }
+    ]
+  );
+}
+
+// Add this NEW method to offer mini-game with character-specific prompts:
+async offerMiniGameExperience(strategy) {
+  const characterName = strategy.character;
+  const strategyName = strategy.name;
+  
+  // Get character-specific mini-game prompt
+  const gamePrompt = this.getMiniGamePrompt(characterName, strategyName);
+  
+  await this.dialogueSystem.showNPCDialogue(
+    gamePrompt,
+    characterName,
+    this.getStrategyColor(strategyName).toString(),
+    [
+      { 
+        text: "Yes, let's practice!", 
+        callback: () => {
+          // Launch the mini-game
+          this.dialogueSystem.launchMiniGame(strategyName, characterName);
+        }
+      },
+      { 
+        text: "Tell me more about the strategy first", 
+        callback: async () => {
+          await this.showStrategyInformation(strategy);
+        }
+      },
+      { 
+        text: "Maybe later", 
+        callback: null 
+      }
+    ]
+  );
+}
+
+// Add this NEW method for character-specific mini-game prompts:
+getMiniGamePrompt(characterName, strategyName) {
+  const prompts = {
+    'Benjamin Franklin': "Would you like to practice gratitude by filling out a daily gratitude journal with me? I'll teach you the same method I used to track my virtues!",
+    'Henry David Thoreau': "Shall we take a mindful journey to Walden Pond? I'll guide you through breathing exercises and nature observation to cultivate present-moment awareness.",
+    'Laura Ingalls Wilder': "How about we organize a community barn raising? You'll learn how neighbors working together can accomplish what no one could do alone!",
+    'Jane Addams': "Would you like to run Hull House with me? We'll help immigrant families and learn how individual acts of kindness can transform entire communities.",
+    'John F. Kennedy': "Ready for a mission to the moon? I'll show you how to break down ambitious goals into precise, achievable steps through an Apollo launch sequence!"
+  };
+  
+  return prompts[characterName] || `Would you like to practice ${strategyName} with an interactive experience?`;
+}
+
+// Update the createPavilion method to use the new enhanced guide interaction:
+// Replace the existing npcInteraction onInteract method with this:
+
+
+  // Add this to the HappinessToolkitGame class in game.js
+createPauseScreen() {
+  // Create pause screen container
+  const pauseScreen = document.createElement('div');
+  pauseScreen.id = 'pause-screen';
+  pauseScreen.style.position = 'fixed';
+  pauseScreen.style.top = '0';
+  pauseScreen.style.left = '0';
+  pauseScreen.style.width = '100%';
+  pauseScreen.style.height = '100%';
+  pauseScreen.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+  pauseScreen.style.display = 'flex';
+  pauseScreen.style.flexDirection = 'column';
+  pauseScreen.style.justifyContent = 'center';
+  pauseScreen.style.alignItems = 'center';
+  pauseScreen.style.zIndex = '1000';
+  pauseScreen.style.opacity = '0';
+  pauseScreen.style.transition = 'opacity 0.3s ease';
+  pauseScreen.style.fontFamily = 'Minecraft, monospace';
+  pauseScreen.style.display = 'none';
+  
+  // Add title
+  const title = document.createElement('h1');
+  title.textContent = 'Game Paused';
+  title.style.color = 'white';
+  title.style.fontSize = '48px';
+  title.style.marginBottom = '40px';
+  title.style.textShadow = '0 0 10px rgba(76, 175, 80, 0.7)';
+  
+  // Create buttons container
+  const buttonsContainer = document.createElement('div');
+  buttonsContainer.style.display = 'flex';
+  buttonsContainer.style.flexDirection = 'column';
+  buttonsContainer.style.gap = '15px';
+  buttonsContainer.style.width = '300px';
+  
+  // Add resume button
+  const resumeButton = document.createElement('button');
+  resumeButton.textContent = 'Resume Game';
+  resumeButton.className = 'minecraft-btn';
+  resumeButton.onclick = () => this.resumeGame();
+  
+  // Add settings button
+  const settingsButton = document.createElement('button');
+  settingsButton.textContent = 'Settings';
+  settingsButton.className = 'minecraft-btn';
+  settingsButton.onclick = () => this.showSettings();
+  
+  // Add main menu button
+  const menuButton = document.createElement('button');
+  menuButton.textContent = 'Main Menu';
+  menuButton.className = 'minecraft-btn';
+  menuButton.onclick = () => {
+    // Show confirmation first
+    if (confirm('Return to main menu? Your progress in the current area will be lost.')) {
+      this.returnToMainMenu();
+    }
+  };
+  
+  // Assemble pause screen
+  buttonsContainer.appendChild(resumeButton);
+  buttonsContainer.appendChild(settingsButton);
+  buttonsContainer.appendChild(menuButton);
+  pauseScreen.appendChild(title);
+  pauseScreen.appendChild(buttonsContainer);
+  
+  document.body.appendChild(pauseScreen);
+  
+  return pauseScreen;
+}
+
+
+
+// Add pause/resume functionality
+pauseGame() {
+  // Create pause screen if it doesn't exist
+  if (!this.pauseScreen) {
+    this.pauseScreen = this.createPauseScreen();
+  }
+  
+  // Unlock pointer controls
+  this.controls.unlock();
+  
+  // Show pause screen with animation
+  this.pauseScreen.style.display = 'flex';
+  // Force reflow to ensure transition works
+  void this.pauseScreen.offsetWidth;
+  this.pauseScreen.style.opacity = '1';
+  
+  // Pause music (but don't stop it)
+  if (window.musicLoader && window.musicLoader.gainNode) {
+    this.musicVolumeBeforePause = window.musicLoader.gainNode.gain.value;
+    window.musicLoader.gainNode.gain.value = this.musicVolumeBeforePause * 0.3; // Reduce volume during pause
+  }
+  
+  // Set game as paused
+  this.isPaused = true;
+}
+
+resumeGame() {
+  if (!this.isPaused) return;
+  
+  // Hide pause screen with animation
+  this.pauseScreen.style.opacity = '0';
+  
+  // After animation completes
+  setTimeout(() => {
+    this.pauseScreen.style.display = 'none';
+    
+    // Lock pointer controls
+    this.controls.lock();
+    
+    // Restore music volume
+    if (window.musicLoader && window.musicLoader.gainNode && this.musicVolumeBeforePause !== undefined) {
+      window.musicLoader.gainNode.gain.value = this.musicVolumeBeforePause;
+    }
+    
+    // Set game as not paused
+    this.isPaused = false;
+  }, 300);
+}
+
+showSettings() {
+  // Create a simple settings menu
+  const settingsContainer = document.createElement('div');
+  settingsContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+  settingsContainer.style.padding = '20px';
+  settingsContainer.style.borderRadius = '10px';
+  settingsContainer.style.border = '3px solid #4CAF50';
+  settingsContainer.style.width = '400px';
+  settingsContainer.style.position = 'absolute';
+  settingsContainer.style.top = '50%';
+  settingsContainer.style.left = '50%';
+  settingsContainer.style.transform = 'translate(-50%, -50%)';
+  settingsContainer.style.zIndex = '1001';
+  
+  // Add settings title
+  const title = document.createElement('h2');
+  title.textContent = 'Settings';
+  title.style.color = 'white';
+  title.style.marginBottom = '20px';
+  title.style.textAlign = 'center';
+  
+  // Add music volume slider
+  const musicVolumeContainer = document.createElement('div');
+  musicVolumeContainer.style.marginBottom = '15px';
+  
+  const musicLabel = document.createElement('label');
+  musicLabel.textContent = 'Music Volume';
+  musicLabel.style.color = 'white';
+  musicLabel.style.display = 'block';
+  musicLabel.style.marginBottom = '5px';
+  
+  const musicSlider = document.createElement('input');
+  musicSlider.type = 'range';
+  musicSlider.min = '0';
+  musicSlider.max = '100';
+  musicSlider.value = window.musicLoader ? Math.round(window.musicLoader.volume * 100) : 50;
+  musicSlider.style.width = '100%';
+  musicSlider.oninput = () => {
+    if (window.musicLoader) {
+      window.musicLoader.setVolume(musicSlider.value / 100);
+    }
+  };
+  
+  // Add sound effects volume slider
+  const sfxVolumeContainer = document.createElement('div');
+  sfxVolumeContainer.style.marginBottom = '15px';
+  
+  const sfxLabel = document.createElement('label');
+  sfxLabel.textContent = 'Sound Effects Volume';
+  sfxLabel.style.color = 'white';
+  sfxLabel.style.display = 'block';
+  sfxLabel.style.marginBottom = '5px';
+  
+  const sfxSlider = document.createElement('input');
+  sfxSlider.type = 'range';
+  sfxSlider.min = '0';
+  sfxSlider.max = '100';
+  sfxSlider.value = window.musicLoader ? Math.round(window.musicLoader.sfxVolume * 100) : 50;
+  sfxSlider.style.width = '100%';
+  sfxSlider.oninput = () => {
+    if (window.musicLoader) {
+      window.musicLoader.setSFXVolume(sfxSlider.value / 100);
+    }
+  };
+  
+  // Close button
+  const closeButton = document.createElement('button');
+  closeButton.textContent = 'Back';
+  closeButton.className = 'minecraft-btn';
+  closeButton.style.width = '100%';
+  closeButton.style.marginTop = '20px';
+  closeButton.onclick = () => {
+    document.body.removeChild(settingsContainer);
+  };
+  
+  // Assemble settings menu
+  musicVolumeContainer.appendChild(musicLabel);
+  musicVolumeContainer.appendChild(musicSlider);
+  sfxVolumeContainer.appendChild(sfxLabel);
+  sfxVolumeContainer.appendChild(sfxSlider);
+  settingsContainer.appendChild(title);
+  settingsContainer.appendChild(musicVolumeContainer);
+  settingsContainer.appendChild(sfxVolumeContainer);
+  settingsContainer.appendChild(closeButton);
+  
+  document.body.appendChild(settingsContainer);
+}
+
+returnToMainMenu() {
+  // Hide pause screen
+  if (this.pauseScreen) {
+    this.pauseScreen.style.display = 'none';
+  }
+  
+  // Hide any dialogue that might be showing
+  if (this.ui.dialogueBox.style.display === 'block') {
+    this.ui.hideDialogue();
+  }
+  
+  // Hide any dialogue options that might be showing
+  if (this.dialogueSystem && this.dialogueSystem.optionsContainer) {
+    this.dialogueSystem.hideDialogueOptions();
+  }
+  
+  // Reset isPaused flag
+  this.isPaused = false;
+  
+  // Set game state to main menu BEFORE loading main menu to avoid duplication
+  
+  // Load main menu
+  this.loadMainMenu();
+}
   createReturnPortal() {
     // Create a portal to return to the lobby
     const portalGeometry = new THREE.TorusGeometry(2, 0.4, 16, 32);
@@ -1292,34 +1882,34 @@ createStrategyCharacter(strategy) {
   }
   
   getStrategyColor(strategyName, alpha = 1) {
-    // Return a color based on the strategy name
-    let color;
-    switch(strategyName) {
-      case "Gratitude":
-        color = new THREE.Color(0xFF8C00);
-        break;
-      case "Mindfulness":
-        color = new THREE.Color(0x228B22);
-        break;
-      case "Social Connection":
-        color = new THREE.Color(0x4682B4);
-        break;
-      case "Acts of Kindness":
-        color = new THREE.Color(0xDA70D6);
-        break;
-      case "Goal Setting":
-        color = new THREE.Color(0x4B0082);
-        break;
-      default:
-        color = new THREE.Color(0x7B68EE);
-    }
-    
-    if (alpha !== 1) {
-      color.multiplyScalar(alpha);
-    }
-    
-    return color;
+  // Return a color based on the strategy name
+  let color;
+  switch(strategyName) {
+    case "Gratitude":
+      color = new THREE.Color(0xFF8C00);
+      break;
+    case "Mindfulness":
+      color = new THREE.Color(0x228B22);
+      break;
+    case "Social Connection":
+      color = new THREE.Color(0x4682B4);
+      break;
+    case "Acts of Kindness":
+      color = new THREE.Color(0xDA70D6);
+      break;
+    case "Goal Setting":
+      color = new THREE.Color(0x4B0082);
+      break;
+    default:
+      color = new THREE.Color(0x7B68EE);
   }
+  
+  if (alpha !== 1) {
+    color.multiplyScalar(alpha);
+  }
+  
+  return color;
+}
 
   // Modified method to advance dialogue and show strategy info with character styling
 showNextStrategyDialogue() {
@@ -1350,49 +1940,39 @@ showNextStrategyDialogue() {
 }
   
   nextDialogue() {
-      // If typing animation is in progress, skip to the end
-
-    if (this.ui.typingTimeout) {
-      clearTimeout(this.ui.typingTimeout);
-      this.ui.typingTimeout = null;
-      
-      if (this.currentStrategy && this.currentDialogueIndex > 0) {
-        this.ui.dialogueText.textContent = this.currentStrategy.dialogues[this.currentDialogueIndex - 1];
-        return;
-      }
-    }
-    
-    // Close dialogue if we've already shown the strategy info
-    if (this.strategyInfoShown) {
-      this.ui.hideDialogue();
-      this.strategyInfoShown = false;
-      return;
-    }
-    
-    // Advance to the next dialogue
-    if (this.currentStrategy) {
-      this.showNextStrategyDialogue();
-    } else {
-      this.ui.hideDialogue();
-    }
+  // Use the dialogue system if it exists and we're in a dialogue conversation
+  if (this.dialogueSystem) {
+    this.dialogueSystem.advanceDialogue();
+    return;
   }
   
-  showStrategyInfo() {
-    // Show full information about the current strategy
-    if (!this.currentStrategy) {
-      return;
-    }
-    
-    const strategy = this.currentStrategy;
-    const infoText = 
-      `Strategy: ${strategy.name}\n\n` +
-      `Description: ${strategy.description}\n\n` +
-      `Historical Connection: ${strategy.historicalConnection}\n\n` +
-      `Historical Context: ${strategy.historicalContext}\n\n` +
-      `Implementation: ${strategy.implementation}`;
-    
-    this.ui.showDialogueWithTyping(infoText);
+  // Fallback for any edge cases
+  if (this.ui && this.ui.dialogueBox && this.ui.dialogueBox.style.display === 'block') {
+    this.ui.hideDialogue();
   }
+}
+  
+  showStrategyInfo() {
+  // Show full information about the current strategy
+  if (!this.currentStrategy) {
+    return;
+  }
+  
+  const strategy = this.currentStrategy;
+  const infoText = 
+    `Strategy: ${strategy.name}\n\n` +
+    `Description: ${strategy.description}\n\n` +
+    `Historical Connection: ${strategy.historicalConnection}\n\n` +
+    `Historical Context: ${strategy.historicalContext}\n\n` +
+    `Implementation: ${strategy.implementation}`;
+  
+  this.ui.showDialogueWithTyping(
+    infoText,
+    strategy.character,
+    this.getStrategyColor(strategy.name).toString()
+  );
+}
+
 
   onWindowResize() {
     // Handle window resize
@@ -1401,82 +1981,148 @@ showNextStrategyDialogue() {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
   }
   
-  onKeyDown(event) {
-    // Check for Enter key to start the game from main menu
-    if (event.code === 'Enter') {
-      // If on main menu, start the game
-      if (this.state === GameState.MAIN_MENU) {
-        this.startGame();
-        return;
-      }
-      // If dialogue is showing, advance dialogue
-      else if (this.ui.dialogueBox.style.display === 'block') {
-        this.nextDialogue();
-        return;
-      }
-    }
-    
-    // Handle other key down events
-    switch (event.code) {
-      case 'KeyW':
-        this.moveForward = true;
-        break;
-      case 'KeyS':
-        this.moveBackward = true;
-        break;
-      case 'KeyA':
-        this.moveLeft = true;
-        break;
-      case 'KeyD':
-        this.moveRight = true;
-        break;
-      case 'KeyE':
-        this.tryInteract();
-        break;
-      case 'Escape':
-        if (this.player.canMove) {
-          this.controls.unlock();
-        }
-        break;
-    }
+onKeyDown(event) {
+  // First check if dialogue system has name input active - if so, don't process any game keys
+  if (this.dialogueSystem && this.dialogueSystem.isNameInputActive()) {
+    return; // Skip all game controls while inputting name
   }
   
-  
-  onKeyUp(event) {
-    // Handle key up events
-    switch (event.code) {
-      case 'KeyW':
-        this.moveForward = false;
-        break;
-      case 'KeyS':
-        this.moveBackward = false;
-        break;
-      case 'KeyA':
-        this.moveLeft = false;
-        break;
-      case 'KeyD':
-        this.moveRight = false;
-        break;
-    }
+  // Check if dialogue system is in transition - don't process keys during transitions
+  if (this.dialogueSystem && this.dialogueSystem.isInDialogueTransition) {
+    return;
   }
   
-  tryInteract() {
-    // Check if the player is near any interactive objects
-    if (!this.interactiveObjects || !this.player.canMove) {
+  // Check for Enter key to advance dialogue or start game
+  if (event.code === 'Enter') {
+    // If on main menu, start the game
+    if (this.state === GameState.MAIN_MENU) {
+      this.startGame();
       return;
     }
     
-    const playerPosition = this.camera.position;
-    
-    for (const obj of this.interactiveObjects) {
-      const distance = playerPosition.distanceTo(obj.position);
-      
-      if (distance <= obj.radius) {
-        obj.onInteract();
+    // Handle dialogue progression
+    if (this.ui && this.ui.dialogueBox && this.ui.dialogueBox.style.display === 'block') {
+      // Check if this is a DialogueSystem conversation (Guide NPC with options)
+      if (this.dialogueSystem && this.dialogueSystem.dialogueCompleteResolver) {
+        // Use the DialogueSystem's advance method for Guide NPC
+        this.dialogueSystem.advanceDialogue();
         return;
       }
+      
+      // Otherwise, handle as strategy NPC dialogue (simple sequential)
+      // If typing is still in progress, complete it
+      if (this.ui.typingTimeout) {
+        this.ui.completeTyping();
+        return;
+      }
+      
+      // Handle strategy character dialogues
+      if (this.currentStrategy && this.currentStrategy.dialogues) {
+        // Increment dialogue index
+        this.currentDialogueIndex++;
+        
+        // If there are more dialogues, show the next one
+        if (this.currentDialogueIndex < this.currentStrategy.dialogues.length) {
+          this.showStrategyDialogue();
+        } 
+        // Otherwise, if we haven't shown strategy info yet, show it
+        else if (!this.strategyInfoShown) {
+          this.showStrategyInfo();
+          this.strategyInfoShown = true;
+        } 
+        // If we've shown everything, hide the dialogue
+        else {
+          this.ui.hideDialogue();
+          this.strategyInfoShown = false;
+        }
+        return;
+      }
+      
+      // If we don't have a current strategy dialogue, just hide the dialogue
+      this.ui.hideDialogue();
+      return;
     }
   }
+  
+  // Handle other key down events as before
+  switch (event.code) {
+    case 'KeyW':
+      this.moveForward = true;
+      break;
+    case 'KeyS':
+      this.moveBackward = true;
+      break;
+    case 'KeyA':
+      this.moveLeft = true;
+      break;
+    case 'KeyD':
+      this.moveRight = true;
+      break;
+    case 'KeyE':
+      this.tryInteract();
+      break;
+    case 'Escape':
+      // Don't toggle pause if input is active or dialogue is showing
+      if (this.ui && this.ui.dialogueBox && this.ui.dialogueBox.style.display === 'block') {
+        return;
+      }
+      
+      // Toggle pause state
+      if (this.isPaused) {
+        this.resumeGame();
+      } else {
+        this.pauseGame();
+      }
+      break;
+  }
+}
+  
+  
+onKeyUp(event) {
+  // Skip if name input is active
+  if (this.dialogueSystem && this.dialogueSystem.isNameInputActive()) {
+    return;
+  }
+  
+  // Handle key up events
+  switch (event.code) {
+    case 'KeyW':
+      this.moveForward = false;
+      break;
+    case 'KeyS':
+      this.moveBackward = false;
+      break;
+    case 'KeyA':
+      this.moveLeft = false;
+      break;
+    case 'KeyD':
+      this.moveRight = false;
+      break;
+  }
+}
+  
+  tryInteract() {
+  // Check if the player is near any interactive objects
+  if (!this.interactiveObjects || !this.player.canMove) {
+    return;
+  }
+  
+  const playerPosition = this.camera.position;
+  
+  for (const obj of this.interactiveObjects) {
+    const distance = playerPosition.distanceTo(obj.position);
+    
+    if (distance <= obj.radius) {
+      // Play interaction sound
+      if (window.musicLoader) {
+        window.musicLoader.playSoundEffect('interact');
+      }
+      
+      obj.onInteract();
+      return;
+    }
+  }
+}
   
   animate() {
     requestAnimationFrame(this.animate.bind(this));

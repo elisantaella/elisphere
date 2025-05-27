@@ -66,11 +66,38 @@ class GameUI {
           border-bottom: 3px solid #388E3C;
           transform: translateY(3px);
         }
+        
+        /* Additional styles for dialogue box positioning */
+        #dialogue {
+          position: fixed !important; 
+          bottom: 50px !important;
+          left: 50% !important;
+          transform: translateX(-50%) !important;
+          z-index: 1000 !important;
+          max-width: 900px !important;
+          width: 85% !important;
+        }
+        
+        /* Mobile-friendly dialogue adjustments */
+        @media screen and (max-width: 768px) {
+          #dialogue {
+            width: 95% !important;
+            max-width: 95% !important;
+            bottom: 30px !important;
+          }
+        }
       `;
       document.head.appendChild(style);
     }
   
     createUI() {
+       // Check if menu already exists in the DOM to prevent duplication
+  if (document.getElementById('menu')) {
+    console.log("Menu already exists in DOM, using existing element");
+    this.menu = document.getElementById('menu');
+    return;
+  }
+
       // Create menu elements with improved styling
       this.menu = document.createElement('div');
       this.menu.id = 'menu';
@@ -90,13 +117,21 @@ class GameUI {
       this.menu.style.zIndex = '100';
       document.body.appendChild(this.menu);
       
-      // Add event listener for Enter key on the main menu
-      document.addEventListener('keydown', (event) => {
-        if (event.code === 'Enter' && this.menu.style.display === 'flex' && this.game.state === GameState.MAIN_MENU) {
-          this.game.startGame();
-        }
-      });
-      
+     // Add event listener for Enter key on the main menu
+document.addEventListener('keydown', (event) => {
+  if (event.code === 'Enter' && this.menu.style.display === 'flex' && this.game.state === GameState.MAIN_MENU) {
+    console.log("Enter key pressed on main menu, starting game...");
+    
+    // Call startGame method
+    this.game.startGame();
+    
+    // Try to lock the pointer controls explicitly
+    if (this.game.controls) {
+      console.log("Requesting pointer lock from keydown...");
+      this.game.controls.lock();
+    }
+  }
+});
       // Create title with animated effects
       const titleContainer = document.createElement('div');
       titleContainer.style.textAlign = 'center';
@@ -139,16 +174,30 @@ class GameUI {
       description.style.lineHeight = '1.6';
       this.menu.appendChild(description);
   
-      // Create start button with Minecraft styling
-      const startButton = document.createElement('button');
-      startButton.textContent = 'Enter the Happiness World';
-      startButton.className = 'minecraft-btn';
-      startButton.style.marginBottom = '30px';
-      startButton.style.animation = 'fadeIn 2s ease-out';
-      startButton.onclick = () => {
-        this.game.startGame();
-      };
-      this.menu.appendChild(startButton);
+      // In ui.js, update the createUI method where the start button is created:
+// Create start button with Minecraft styling
+const startButton = document.createElement('button');
+startButton.textContent = 'Enter the Happiness World';
+startButton.className = 'minecraft-btn';
+startButton.style.marginBottom = '30px';
+startButton.style.animation = 'fadeIn 2s ease-out';
+startButton.onclick = (event) => {
+  // Prevent default to avoid any browser issues
+  event.preventDefault();
+  
+  // Log that button was clicked
+  console.log("Start button clicked, starting game...");
+  
+  // Call startGame method with a direct reference to ensure proper context
+  this.game.startGame();
+  
+  // Try to lock the pointer controls explicitly
+  if (this.game.controls) {
+    console.log("Requesting pointer lock...");
+    this.game.controls.lock();
+  }
+};
+this.menu.appendChild(startButton);
   
       // Add "Press ENTER to begin" notice with animation
       const enterPrompt = document.createElement('p');
@@ -163,7 +212,8 @@ class GameUI {
   
       // Create subtitle with improved styling
       const subtitle = document.createElement('p');
-      subtitle.textContent = 'Connecting Well-being Strategies to US History';
+      //subtitle.textContent = 'Connecting Well-being Strategies to US History';
+      subtitle.textContent =   '                                              ';
       subtitle.style.fontSize = '20px';
       subtitle.style.opacity = '0.8';
       subtitle.style.marginTop = '40px';
@@ -197,11 +247,12 @@ class GameUI {
       // Create Minecraft-styled dialogue box (hidden by default)
       this.dialogueBox = document.createElement('div');
       this.dialogueBox.id = 'dialogue';
-      this.dialogueBox.style.position = 'absolute';
+      this.dialogueBox.style.position = 'fixed'; // Changed from 'absolute' to 'fixed'
       this.dialogueBox.style.bottom = '50px';
       this.dialogueBox.style.left = '50%';
       this.dialogueBox.style.transform = 'translateX(-50%)';
       this.dialogueBox.style.width = '85%';
+      this.dialogueBox.style.maxWidth = '900px'; // Reduced max width
       this.dialogueBox.style.backgroundColor = 'rgba(0,0,0,0.85)';
       this.dialogueBox.style.color = 'white';
       this.dialogueBox.style.padding = '25px 30px';
@@ -211,7 +262,7 @@ class GameUI {
       this.dialogueBox.style.border = '4px solid #555';
       this.dialogueBox.style.boxShadow = '0 0 20px rgba(0,0,0,0.7)';
       this.dialogueBox.style.display = 'none';
-      this.dialogueBox.style.zIndex = '100';
+      this.dialogueBox.style.zIndex = '1000'; // Increased z-index
       document.body.appendChild(this.dialogueBox);
       
       // Character name header area
@@ -253,84 +304,261 @@ class GameUI {
     }
   
     showMenu() {
-      this.menu.style.display = 'flex';
+        // Make sure we don't create duplicate menu elements
+  if (this.menu && this.menu.style.display === 'flex') {
+    console.log("Menu already shown, adjusting visibility only");
+    this.menu.style.display = 'flex';
+    return;
+  }
+  
+  // Check if menu exists and just needs to be shown
+  if (this.menu) {
+    this.menu.style.display = 'flex';
+    return;
+  }
+  
     }
   
     hideMenu() {
       this.menu.style.display = 'none';
     }
   
-    showDialogueWithTyping(text, characterName = null, characterColor = null) {
-      // Clear any existing typing animation
-      if (this.typingTimeout) {
-        clearTimeout(this.typingTimeout);
-        this.typingTimeout = null;
-      }
-      
-      // Show and style the dialogue box with fade-in effect
-      this.dialogueBox.style.display = 'block';
-      this.dialogueBox.style.opacity = '0';
-      this.dialogueBox.style.animation = 'fadeIn 0.3s forwards';
-      
-      // Set character name if provided
-      if (characterName) {
-        this.dialogueCharacterName.textContent = characterName;
-        this.dialogueCharacterName.style.display = 'block';
-        
-        // Apply character color if provided
-        if (characterColor) {
-          this.dialogueCharacterName.style.backgroundColor = characterColor;
-          this.dialogueCharacterName.style.borderColor = this.adjustColorBrightness(characterColor, -20);
-          this.dialogueCharacterName.style.color = this.getContrastColor(characterColor);
-        } else {
-          // Default styling
-          this.dialogueCharacterName.style.backgroundColor = '#333';
-          this.dialogueCharacterName.style.borderColor = '#555';
-          this.dialogueCharacterName.style.color = 'white';
-        }
-      } else {
-        this.dialogueCharacterName.style.display = 'none';
-      }
-      
-      // Reset text content
-      this.dialogueText.textContent = '';
-      this.game.player.canMove = false;
-      
-      // Start typing animation
-      let i = 0;
-      
-      const typeWriter = () => {
-        if (i < text.length) {
-          this.dialogueText.textContent += text.charAt(i);
-          i++;
-          
-          // Add sound effect for typing (if you have one)
-          // this.playTypingSound();
-          
-          this.typingTimeout = setTimeout(typeWriter, this.typingSpeed);
-        }
-      };
-      
-      // Begin the typing animation
-      typeWriter();
-    }
   
-    hideDialogue() {
-      // Fade out animation
-      this.dialogueBox.style.animation = 'fadeIn 0.3s reverse forwards';
-      
-      // Actually hide the dialogue after animation completes
-      setTimeout(() => {
-        this.dialogueBox.style.display = 'none';
-        this.game.player.canMove = true;
-      }, 300);
-      
-      // Clear any ongoing typing animation
-      if (this.typingTimeout) {
-        clearTimeout(this.typingTimeout);
-        this.typingTimeout = null;
-      }
+showDialogueWithTyping(text, characterName = null, characterColor = null, soundType = 'npcTyping') {
+  // Ensure dialogue box is created
+  if (!this.dialogueBox) {
+    console.warn("Dialogue box doesn't exist yet, creating it now");
+    this.createDialogueBox();
+  }
+  
+  // Clear any existing typing animation
+  if (this.typingTimeout) {
+    clearTimeout(this.typingTimeout);
+    this.typingTimeout = null;
+  }
+  
+  // Store the full text for later use when completing typing
+  this.fullDialogueText = text;
+  
+  // Reset any previous hiding animation
+  this.isHidingDialogue = false;
+  this.dialogueBox.style.animation = '';
+  
+  // Show the dialogue box immediately
+  this.dialogueBox.style.display = 'block';
+  this.dialogueBox.style.opacity = '1';
+  
+  // Set character name if provided
+  if (characterName) {
+    this.dialogueCharacterName.textContent = characterName;
+    this.dialogueCharacterName.style.display = 'block';
+    
+    // Apply character color if provided
+    if (characterColor) {
+      this.dialogueCharacterName.style.backgroundColor = characterColor;
+      this.dialogueCharacterName.style.borderColor = this.adjustColorBrightness(characterColor, -20);
+      this.dialogueCharacterName.style.color = this.getContrastColor(characterColor);
+    } else {
+      // Default styling
+      this.dialogueCharacterName.style.backgroundColor = '#333';
+      this.dialogueCharacterName.style.borderColor = '#555';
+      this.dialogueCharacterName.style.color = 'white';
     }
+  } else {
+    this.dialogueCharacterName.style.display = 'none';
+  }
+  
+  // Reset text content
+  this.dialogueText.textContent = '';
+  if (this.game && this.game.player) {
+    this.game.player.canMove = false;
+  }
+  
+  // Start typing animation
+  let i = 0;
+  
+  const typeWriter = () => {
+    if (i < text.length) {
+      this.dialogueText.textContent += text.charAt(i);
+      i++;
+      
+      // Play typing sound effect for visible characters
+      const currentChar = text.charAt(i - 1);
+      if (currentChar !== ' ' && currentChar !== '\n' && currentChar !== '\t' && currentChar !== '\r') {
+        // Only attempt to play sound effect if musicLoader exists
+        try {
+          if (window.musicLoader && window.musicLoader.playSoundEffect) {
+            window.musicLoader.playSoundEffect(soundType);
+          }
+        } catch (error) {
+          console.warn("Error playing typing sound:", error);
+        }
+      }
+      
+      this.typingTimeout = setTimeout(typeWriter, this.typingSpeed);
+    }
+  };
+  
+  // Begin the typing animation
+  typeWriter();
+}
+
+// Add a method to create the dialogue box if it doesn't exist
+createDialogueBox() {
+  // Create Minecraft-styled dialogue box
+  this.dialogueBox = document.createElement('div');
+  this.dialogueBox.id = 'dialogue';
+  this.dialogueBox.style.position = 'absolute';
+  this.dialogueBox.style.bottom = '50px';
+  this.dialogueBox.style.left = '50%';
+  this.dialogueBox.style.transform = 'translateX(-50%)';
+  this.dialogueBox.style.width = '85%';
+  this.dialogueBox.style.backgroundColor = 'rgba(0,0,0,0.85)';
+  this.dialogueBox.style.color = 'white';
+  this.dialogueBox.style.padding = '25px 30px';
+  this.dialogueBox.style.borderRadius = '5px';
+  this.dialogueBox.style.fontFamily = 'Minecraft, monospace';
+  this.dialogueBox.style.fontSize = '18px';
+  this.dialogueBox.style.border = '4px solid #555';
+  this.dialogueBox.style.boxShadow = '0 0 20px rgba(0,0,0,0.7)';
+  this.dialogueBox.style.display = 'none';
+  this.dialogueBox.style.zIndex = '100';
+  document.body.appendChild(this.dialogueBox);
+  
+  // Character name header area
+  this.dialogueCharacterName = document.createElement('div');
+  this.dialogueCharacterName.style.position = 'absolute';
+  this.dialogueCharacterName.style.top = '-20px';
+  this.dialogueCharacterName.style.left = '20px';
+  this.dialogueCharacterName.style.backgroundColor = '#333';
+  this.dialogueCharacterName.style.color = 'white';
+  this.dialogueCharacterName.style.padding = '5px 15px';
+  this.dialogueCharacterName.style.borderRadius = '5px';
+  this.dialogueCharacterName.style.border = '2px solid #555';
+  this.dialogueCharacterName.style.fontFamily = 'Minecraft, monospace';
+  this.dialogueCharacterName.style.fontSize = '16px';
+  this.dialogueCharacterName.style.fontWeight = 'bold';
+  this.dialogueBox.appendChild(this.dialogueCharacterName);
+
+  // Create dialogue text with improved styling
+  this.dialogueText = document.createElement('div');
+  this.dialogueText.style.margin = '0';
+  this.dialogueText.style.lineHeight = '1.6';
+  this.dialogueText.style.whiteSpace = 'pre-line';
+  this.dialogueText.style.fontFamily = 'Minecraft, monospace';
+  this.dialogueText.style.fontSize = '20px';
+  this.dialogueText.style.textShadow = '1px 1px 1px rgba(0,0,0,0.5)';
+  this.dialogueBox.appendChild(this.dialogueText);
+  
+  // Add a subtle "Press Enter to continue" prompt
+  const dialogueHint = document.createElement('div');
+  dialogueHint.style.fontSize = '16px';
+  dialogueHint.style.marginTop = '20px';
+  dialogueHint.style.textAlign = 'right';
+  dialogueHint.style.opacity = '0.7';
+  dialogueHint.style.fontStyle = 'italic';
+  dialogueHint.style.color = '#AAAAAA';
+  dialogueHint.style.animation = 'pulse 1.5s infinite';
+  dialogueHint.innerHTML = 'Press <span style="color: #4CAF50; font-weight: bold;">ENTER</span> to continue';
+  this.dialogueBox.appendChild(dialogueHint);
+}
+
+// Add a method to create the dialogue box if it doesn't exist
+createDialogueBox() {
+  // Create Minecraft-styled dialogue box
+  this.dialogueBox = document.createElement('div');
+  this.dialogueBox.id = 'dialogue';
+  this.dialogueBox.style.position = 'absolute';
+  this.dialogueBox.style.bottom = '50px';
+  this.dialogueBox.style.left = '50%';
+  this.dialogueBox.style.transform = 'translateX(-50%)';
+  this.dialogueBox.style.width = '85%';
+  this.dialogueBox.style.backgroundColor = 'rgba(0,0,0,0.85)';
+  this.dialogueBox.style.color = 'white';
+  this.dialogueBox.style.padding = '25px 30px';
+  this.dialogueBox.style.borderRadius = '5px';
+  this.dialogueBox.style.fontFamily = 'Minecraft, monospace';
+  this.dialogueBox.style.fontSize = '18px';
+  this.dialogueBox.style.border = '4px solid #555';
+  this.dialogueBox.style.boxShadow = '0 0 20px rgba(0,0,0,0.7)';
+  this.dialogueBox.style.display = 'none';
+  this.dialogueBox.style.zIndex = '100';
+  document.body.appendChild(this.dialogueBox);
+  
+  // Character name header area
+  this.dialogueCharacterName = document.createElement('div');
+  this.dialogueCharacterName.style.position = 'absolute';
+  this.dialogueCharacterName.style.top = '-20px';
+  this.dialogueCharacterName.style.left = '20px';
+  this.dialogueCharacterName.style.backgroundColor = '#333';
+  this.dialogueCharacterName.style.color = 'white';
+  this.dialogueCharacterName.style.padding = '5px 15px';
+  this.dialogueCharacterName.style.borderRadius = '5px';
+  this.dialogueCharacterName.style.border = '2px solid #555';
+  this.dialogueCharacterName.style.fontFamily = 'Minecraft, monospace';
+  this.dialogueCharacterName.style.fontSize = '16px';
+  this.dialogueCharacterName.style.fontWeight = 'bold';
+  this.dialogueBox.appendChild(this.dialogueCharacterName);
+
+  // Create dialogue text with improved styling
+  this.dialogueText = document.createElement('div');
+  this.dialogueText.style.margin = '0';
+  this.dialogueText.style.lineHeight = '1.6';
+  this.dialogueText.style.whiteSpace = 'pre-line';
+  this.dialogueText.style.fontFamily = 'Minecraft, monospace';
+  this.dialogueText.style.fontSize = '20px';
+  this.dialogueText.style.textShadow = '1px 1px 1px rgba(0,0,0,0.5)';
+  this.dialogueBox.appendChild(this.dialogueText);
+  
+  // Add a subtle "Press Enter to continue" prompt
+  const dialogueHint = document.createElement('div');
+  dialogueHint.style.fontSize = '16px';
+  dialogueHint.style.marginTop = '20px';
+  dialogueHint.style.textAlign = 'right';
+  dialogueHint.style.opacity = '0.7';
+  dialogueHint.style.fontStyle = 'italic';
+  dialogueHint.style.color = '#AAAAAA';
+  dialogueHint.style.animation = 'pulse 1.5s infinite';
+  dialogueHint.innerHTML = 'Press <span style="color: #4CAF50; font-weight: bold;">ENTER</span> to continue';
+  this.dialogueBox.appendChild(dialogueHint);
+}
+  
+hideDialogue() {
+  // Check if dialogueBox exists and not already hiding
+  if (!this.dialogueBox || this.isHidingDialogue) {
+    return;
+  }
+
+  // Set flag to prevent multiple hide operations
+  this.isHidingDialogue = true;
+  
+  // Fade out animation
+  this.dialogueBox.style.animation = 'fadeIn 0.3s reverse forwards';
+  
+  // Actually hide the dialogue after animation completes
+  setTimeout(() => {
+    if (this.dialogueBox) {
+      this.dialogueBox.style.display = 'none';
+      this.isHidingDialogue = false;
+      
+      // Only restore player movement if not in a dialogue sequence
+      if (this.game && this.game.player && 
+          (!this.game.dialogueSystem || 
+           !this.game.dialogueSystem.isWaitingForChoice)) {
+        this.game.player.canMove = true;
+      }
+      
+      // Clear the full text reference
+      this.fullDialogueText = null;
+    }
+  }, 300);
+  
+  // Clear any ongoing typing animation
+  if (this.typingTimeout) {
+    clearTimeout(this.typingTimeout);
+    this.typingTimeout = null;
+  }
+}
     
     // Helper function to adjust color brightness
     adjustColorBrightness(color, percent) {
@@ -376,14 +604,35 @@ class GameUI {
     }
     
     // Method to skip typing animation and show full text immediately
-    completeTyping() {
-      if (this.typingTimeout) {
-        clearTimeout(this.typingTimeout);
-        this.typingTimeout = null;
+completeTyping() {
+  if (this.typingTimeout) {
+    clearTimeout(this.typingTimeout);
+    this.typingTimeout = null;
+    
+    // Display the complete text immediately
+    if (this.fullDialogueText) {
+      this.dialogueText.textContent = this.fullDialogueText;
+    } else if (this.game && this.game.currentStrategy && this.game.currentDialogueIndex > 0) {
+      this.dialogueText.textContent = this.game.currentStrategy.dialogues[this.game.currentDialogueIndex - 1];
+    }
+  }
+}
+
+    // Add a reset function for dialogue position
+    resetDialoguePosition() {
+      if (this.dialogueBox) {
+        // Force the correct position styles
+        this.dialogueBox.style.position = 'fixed';
+        this.dialogueBox.style.bottom = '50px';
+        this.dialogueBox.style.left = '50%';
+        this.dialogueBox.style.transform = 'translateX(-50%)';
+        this.dialogueBox.style.width = '85%';
+        this.dialogueBox.style.maxWidth = '900px';
+        this.dialogueBox.style.zIndex = '1000';
         
-        // Get the complete text from current dialogue
-        if (this.game.currentStrategy && this.game.currentDialogueIndex > 0) {
-          this.dialogueText.textContent = this.game.currentStrategy.dialogues[this.game.currentDialogueIndex - 1];
+        // Make sure it's properly hidden if it should be
+        if (this.dialogueBox.style.display === 'none') {
+          this.dialogueBox.style.display = 'none';
         }
       }
     }
@@ -398,3 +647,25 @@ class GameUI {
     // For browser use, add to window
     window.GameUI = GameUI;
   }
+
+// Add this code to ensure dialogue positioning works consistently
+// Auto-execute after a brief delay to make sure everything is loaded
+setTimeout(function() {
+  // Find any existing game instance
+  if (window.game && window.game.ui) {
+    // First reset
+    window.game.ui.resetDialoguePosition();
+    
+    // Set up periodic check
+    function ensureDialoguePositioning() {
+      if (window.game && window.game.ui && window.game.ui.dialogueBox) {
+        window.game.ui.resetDialoguePosition();
+      }
+      // Call again after a delay
+      setTimeout(ensureDialoguePositioning, 2000);
+    }
+    
+    // Start the periodic check
+    ensureDialoguePositioning();
+  }
+}, 1000);

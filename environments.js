@@ -435,6 +435,7 @@ class EnvironmentBuilder {
         return sky;
       }
     }
+    
     // Create a flag (for Goal Setting area)
     createFlag() {
       // Flag pole

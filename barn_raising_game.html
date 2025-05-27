@@ -1,0 +1,1192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Laura's Community Barn Raising</title>
+  
+  <style>
+    @font-face {
+      font-family: 'Minecraft';
+      src: url('fonts/minecraft.woff') format('woff');
+      font-weight: normal;
+      font-style: normal;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Minecraft', monospace;
+      background: linear-gradient(135deg, #87CEEB 0%, #DEB887 50%, #D2B48C 100%);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Animated prairie background */
+    .prairie-scene {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .wheat-stalk {
+      position: absolute;
+      width: 3px;
+      height: 40px;
+      background: linear-gradient(to top, #DAA520, #F0E68C);
+      border-radius: 2px;
+      animation: wheat-sway 4s ease-in-out infinite;
+      transform-origin: bottom center;
+    }
+
+    @keyframes wheat-sway {
+      0%, 100% { transform: rotate(-2deg); }
+      50% { transform: rotate(2deg); }
+    }
+
+    .cloud {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 50px;
+      animation: drift-cloud 25s linear infinite;
+    }
+
+    @keyframes drift-cloud {
+      0% { transform: translateX(-100px); }
+      100% { transform: translateX(calc(100vw + 100px)); }
+    }
+
+    .game-container {
+      position: relative;
+      z-index: 2;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+      color: #8B4513;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .header h1 {
+      font-size: 48px;
+      margin-bottom: 10px;
+      animation: barn-glow 3s ease-in-out infinite alternate;
+    }
+
+    @keyframes barn-glow {
+      from { text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+      to { text-shadow: 2px 2px 4px rgba(0,0,0,0.3), 0 0 20px rgba(70,130,180,0.4); }
+    }
+
+    .laura-quote {
+      font-size: 18px;
+      font-style: italic;
+      margin-bottom: 15px;
+      color: #8B4513;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .game-area {
+      display: grid;
+      grid-template-columns: 1fr 350px;
+      gap: 30px;
+      margin-bottom: 30px;
+    }
+
+    .barn-construction {
+      background: linear-gradient(135deg, rgba(139, 69, 19, 0.1), rgba(210, 180, 140, 0.2));
+      border: 4px solid #8B4513;
+      border-radius: 20px;
+      padding: 20px;
+      position: relative;
+      min-height: 600px;
+      overflow: hidden;
+    }
+
+    .construction-title {
+      color: #8B4513;
+      font-size: 24px;
+      margin-bottom: 20px;
+      text-align: center;
+      border-bottom: 3px solid #8B4513;
+      padding-bottom: 10px;
+    }
+
+    .barn-frame {
+      position: relative;
+      width: 100%;
+      height: 500px;
+      background: linear-gradient(to bottom, #87CEEB 0%, #98FB98 70%, #8FBC8F 100%);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .barn-foundation {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80%;
+      height: 40px;
+      background: #A0522D;
+      border-radius: 5px;
+    }
+
+    .barn-piece {
+      position: absolute;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      opacity: 0;
+      transform: scale(0);
+    }
+
+    .barn-piece.available {
+      opacity: 1;
+      transform: scale(1);
+      animation: piece-appear 0.5s ease;
+    }
+
+    .barn-piece.placed {
+      opacity: 1;
+      transform: scale(1);
+      cursor: default;
+      filter: brightness(1.1);
+    }
+
+    .barn-piece:hover:not(.placed) {
+      transform: scale(1.1);
+      filter: brightness(1.2);
+      z-index: 10;
+    }
+
+    @keyframes piece-appear {
+      from { opacity: 0; transform: scale(0) rotate(10deg); }
+      to { opacity: 1; transform: scale(1) rotate(0deg); }
+    }
+
+    .floor-beam {
+      width: 60%;
+      height: 15px;
+      background: #DEB887;
+      border: 2px solid #8B4513;
+      border-radius: 3px;
+    }
+
+    .wall-frame {
+      width: 15px;
+      height: 100px;
+      background: #D2B48C;
+      border: 2px solid #8B4513;
+      border-radius: 3px;
+    }
+
+    .roof-beam {
+      width: 80px;
+      height: 15px;
+      background: #CD853F;
+      border: 2px solid #8B4513;
+      border-radius: 3px;
+    }
+
+    .roof-panel {
+      width: 120px;
+      height: 80px;
+      background: #B22222;
+      border: 2px solid #8B0000;
+      border-radius: 5px;
+      clip-path: polygon(0 100%, 50% 0, 100% 100%);
+    }
+
+    .neighbor-panel {
+      background: rgba(70, 130, 180, 0.9);
+      border: 4px solid #4682B4;
+      border-radius: 15px;
+      padding: 20px;
+      height: fit-content;
+    }
+
+    .neighbors-title {
+      color: #4682B4;
+      font-size: 22px;
+      margin-bottom: 20px;
+      text-align: center;
+      border-bottom: 2px solid #4682B4;
+      padding-bottom: 10px;
+    }
+
+    .neighbor {
+      background: rgba(255, 255, 255, 0.9);
+      border: 2px solid #4682B4;
+      border-radius: 10px;
+      padding: 15px;
+      margin: 15px 0;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .neighbor:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+      background: rgba(255, 255, 255, 1);
+    }
+
+    .neighbor.helping {
+      background: rgba(152, 251, 152, 0.9);
+      border-color: #32CD32;
+      animation: helping-pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes helping-pulse {
+      0%, 100% { box-shadow: 0 0 5px rgba(50, 205, 50, 0.5); }
+      50% { box-shadow: 0 0 15px rgba(50, 205, 50, 0.8); }
+    }
+
+    .neighbor.tired {
+      background: rgba(255, 182, 193, 0.9);
+      border-color: #FF6B6B;
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+
+    .neighbor-name {
+      font-weight: bold;
+      color: #4682B4;
+      font-size: 16px;
+      margin-bottom: 5px;
+    }
+
+    .neighbor-skill {
+      font-size: 14px;
+      color: #2F4F4F;
+      margin-bottom: 8px;
+    }
+
+    .neighbor-status {
+      font-size: 12px;
+      color: #696969;
+      font-style: italic;
+    }
+
+    .neighbor-energy {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      display: flex;
+      gap: 2px;
+    }
+
+    .energy-heart {
+      width: 12px;
+      height: 12px;
+      background: #FF69B4;
+      border-radius: 50%;
+      position: relative;
+    }
+
+    .energy-heart::before {
+      content: '♥';
+      position: absolute;
+      color: #FF1493;
+      font-size: 10px;
+      top: -2px;
+      left: 1px;
+    }
+
+    .energy-heart.empty {
+      background: #D3D3D3;
+    }
+
+    .energy-heart.empty::before {
+      color: #A9A9A9;
+    }
+
+    .task-queue {
+      background: rgba(139, 69, 19, 0.1);
+      border: 3px solid #8B4513;
+      border-radius: 15px;
+      padding: 20px;
+      margin-top: 20px;
+    }
+
+    .task-title {
+      color: #8B4513;
+      font-size: 20px;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+
+    .current-task {
+      background: rgba(255, 215, 0, 0.3);
+      border: 2px solid #FFD700;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+
+    .task-description {
+      color: #8B4513;
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .task-progress {
+      background: rgba(139, 69, 19, 0.2);
+      border: 2px solid #8B4513;
+      border-radius: 10px;
+      height: 25px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #32CD32, #228B22);
+      width: 0%;
+      transition: width 0.5s ease;
+      border-radius: 8px;
+    }
+
+    .progress-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #8B4513;
+      font-weight: bold;
+      font-size: 12px;
+    }
+
+    .cooperation-meter {
+      background: rgba(70, 130, 180, 0.2);
+      border: 3px solid #4682B4;
+      border-radius: 15px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+
+    .meter-title {
+      color: #4682B4;
+      font-size: 20px;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+
+    .meter-bar {
+      background: rgba(70, 130, 180, 0.3);
+      border: 2px solid #4682B4;
+      border-radius: 15px;
+      height: 30px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .meter-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #4682B4, #87CEEB);
+      width: 0%;
+      transition: width 0.5s ease;
+      border-radius: 13px;
+    }
+
+    .meter-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #4682B4;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    .controls {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .btn {
+      background: linear-gradient(45deg, #4682B4, #87CEEB);
+      border: 3px solid #2F4F4F;
+      border-radius: 10px;
+      color: white;
+      padding: 15px 30px;
+      font-size: 18px;
+      font-family: 'Minecraft', monospace;
+      font-weight: bold;
+      cursor: pointer;
+      margin: 0 10px;
+      transition: all 0.3s ease;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+    }
+
+    .btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+      background: linear-gradient(45deg, #87CEEB, #4682B4);
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .completion-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      animation: fadeIn 0.5s ease;
+    }
+
+    .completion-content {
+      background: rgba(245, 222, 179, 0.98);
+      border: 4px solid #8B4513;
+      border-radius: 20px;
+      padding: 40px;
+      text-align: center;
+      max-width: 700px;
+      color: #8B4513;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    }
+
+    .completion-content h2 {
+      font-size: 36px;
+      margin-bottom: 20px;
+      color: #4682B4;
+    }
+
+    .laura-final-quote {
+      font-size: 18px;
+      font-style: italic;
+      margin: 20px 0;
+      padding: 20px;
+      background: rgba(70, 130, 180, 0.1);
+      border-left: 4px solid #4682B4;
+      border-radius: 5px;
+    }
+
+    .barn-celebration {
+      font-size: 24px;
+      margin: 20px 0;
+      animation: celebration-bounce 1s ease-in-out infinite alternate;
+    }
+
+    @keyframes celebration-bounce {
+      from { transform: scale(1); }
+      to { transform: scale(1.05); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    /* Mobile responsive */
+    @media (max-width: 768px) {
+      .game-area {
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+      
+      .header h1 {
+        font-size: 32px;
+      }
+      
+      .laura-quote {
+        font-size: 16px;
+      }
+      
+      .barn-construction {
+        min-height: 400px;
+      }
+      
+      .barn-frame {
+        height: 350px;
+      }
+      
+      .btn {
+        font-size: 16px;
+        padding: 12px 24px;
+        margin: 5px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Prairie background -->
+  <div class="prairie-scene" id="prairie-background"></div>
+
+  <div class="game-container">
+    <div class="header">
+      <h1>🏠 Laura's Community Barn Raising 🏠</h1>
+      <p class="laura-quote">"It is the sweet, simple things of life which are the real ones after all. And there is no great thing or small, there is only the way we approach them."</p>
+    </div>
+
+    <div class="game-area">
+      <div class="barn-construction">
+        <h3 class="construction-title">Barn Construction Site</h3>
+        <div class="barn-frame" id="barn-frame">
+          <div class="barn-foundation"></div>
+          <!-- Barn pieces will be dynamically placed here -->
+        </div>
+      </div>
+
+      <div class="neighbor-panel">
+        <h3 class="neighbors-title">Prairie Neighbors</h3>
+        <div id="neighbors-list">
+          <!-- Neighbors will be generated here -->
+        </div>
+      </div>
+    </div>
+
+    <div class="task-queue">
+      <h3 class="task-title">Current Building Task</h3>
+      <div class="current-task">
+        <div class="task-description" id="task-description">Click "Start Barn Raising" to begin!</div>
+        <div class="task-progress">
+          <div class="progress-fill" id="task-progress"></div>
+          <div class="progress-text" id="progress-text">Ready to start</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cooperation-meter">
+      <h3 class="meter-title">Community Cooperation</h3>
+      <div class="meter-bar">
+        <div class="meter-fill" id="cooperation-fill"></div>
+        <div class="meter-text" id="cooperation-text">0% - Gather your neighbors!</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="btn" id="start-btn" onclick="startBarnRaising()">Start Barn Raising</button>
+      <button class="btn" onclick="resetConstruction()">Reset Construction</button>
+      <button class="btn" onclick="returnToElisphere()">Return to Elisphere</button>
+    </div>
+  </div>
+
+  <!-- Completion Screen -->
+  <div class="completion-screen" id="completion-screen">
+    <div class="completion-content">
+      <h2>🎉 Barn Raising Complete! 🎉</h2>
+      <div class="barn-celebration">🏠✨ The Whole Community Worked Together! ✨🏠</div>
+      <div class="laura-final-quote">
+        "The real things haven't changed. It is still best to be honest and truthful; to make the most of what we have; to be happy with simple pleasures; and have courage when things go wrong."<br>
+        <strong>- Laura Ingalls Wilder</strong>
+      </div>
+      <p>You've successfully brought the community together to raise a barn! Like the pioneers on the prairie, you've learned that great things are accomplished when neighbors help neighbors.</p>
+      <p><strong>Community Cooperation:</strong> <span id="final-cooperation">0</span>%</p>
+      <p><strong>Neighbors Helped:</strong> <span id="neighbors-helped">0</span></p>
+      <p><strong>Time to Complete:</strong> <span id="final-time">0:00</span></p>
+      <button class="btn" onclick="raiseBarnAgain()">Raise Another Barn</button>
+      <button class="btn" onclick="returnToElisphere()">Return to Elisphere</button>
+    </div>
+  </div>
+
+  <script>
+    // Game state
+    let gameStarted = false;
+    let startTime = null;
+    let gameInterval = null;
+    let currentTaskIndex = 0;
+    let cooperationLevel = 0;
+    let neighborsHelped = 0;
+    let totalNeighbors = 6;
+
+    // Audio system
+    let audioContext = null;
+    let musicGain = null;
+    let sfxGain = null;
+
+    // Neighbors data
+    const neighbors = [
+      { 
+        name: "Pa Ingalls", 
+        skill: "Master Carpenter", 
+        energy: 5, 
+        maxEnergy: 5, 
+        helpBonus: 20,
+        status: "Ready to help with the foundation"
+      },
+      { 
+        name: "Mr. Edwards", 
+        skill: "Strong Builder", 
+        energy: 4, 
+        maxEnergy: 4, 
+        helpBonus: 15,
+        status: "Excellent at lifting heavy beams"
+      },
+      { 
+        name: "Mr. Hanson", 
+        skill: "Frame Specialist", 
+        energy: 4, 
+        maxEnergy: 4, 
+        helpBonus: 18,
+        status: "Expert at wall construction"
+      },
+      { 
+        name: "Doc Baker", 
+        skill: "Detail Work", 
+        energy: 3, 
+        maxEnergy: 3, 
+        helpBonus: 12,
+        status: "Good with precise measurements"
+      },
+      { 
+        name: "Mr. Oleson", 
+        skill: "Organization", 
+        energy: 3, 
+        maxEnergy: 3, 
+        helpBonus: 10,
+        status: "Keeps everyone coordinated"
+      },
+      { 
+        name: "Almanzo", 
+        skill: "Roof Expert", 
+        energy: 5, 
+        maxEnergy: 5, 
+        helpBonus: 22,
+        status: "Specializes in roofing work"
+      }
+    ];
+
+    // Building tasks
+    const buildingTasks = [
+      {
+        name: "Lay Foundation Beams",
+        description: "Place the wooden foundation beams",
+        pieces: "floor-beam",
+        requiredHelp: 2,
+        positions: [
+          { left: "20%", bottom: "50px" },
+          { left: "50%", bottom: "50px" },
+          { left: "80%", bottom: "50px" }
+        ]
+      },
+      {
+        name: "Raise Wall Frames",
+        description: "Construct the side walls",
+        pieces: "wall-frame",
+        requiredHelp: 3,
+        positions: [
+          { left: "15%", bottom: "70px" },
+          { left: "25%", bottom: "70px" },
+          { left: "75%", bottom: "70px" },
+          { left: "85%", bottom: "70px" }
+        ]
+      },
+      {
+        name: "Install Roof Beams",
+        description: "Add the roof support structure",
+        pieces: "roof-beam",
+        requiredHelp: 4,
+        positions: [
+          { left: "30%", bottom: "180px" },
+          { left: "50%", bottom: "200px" },
+          { left: "70%", bottom: "180px" }
+        ]
+      },
+      {
+        name: "Complete the Roof",
+        description: "Add the final roof panels",
+        pieces: "roof-panel",
+        requiredHelp: 4,
+        positions: [
+          { left: "35%", bottom: "220px" },
+          { left: "65%", bottom: "220px" }
+        ]
+      }
+    ];
+
+    let currentTask = null;
+    let currentTaskProgress = 0;
+    let helpingNeighbors = [];
+
+    // Initialize the game
+    function initGame() {
+      createAudioSystem();
+      createPrairieBackground();
+      generateNeighbors();
+      playBackgroundMusic();
+    }
+
+    function createAudioSystem() {
+      try {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        musicGain = audioContext.createGain();
+        sfxGain = audioContext.createGain();
+        
+        musicGain.gain.value = 0.3;
+        sfxGain.gain.value = 0.5;
+        
+        musicGain.connect(audioContext.destination);
+        sfxGain.connect(audioContext.destination);
+      } catch (error) {
+        console.warn('Audio not available:', error);
+      }
+    }
+
+    function playSound(soundType) {
+      if (!audioContext) return;
+      
+      const frequencies = {
+        hammer: 200,      // Deep thud
+        cooperation: 523, // C note
+        complete: 659,    // E note
+        success: 784,     // G note
+        gather: 440       // A note
+      };
+
+      const freq = frequencies[soundType] || 440;
+      
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(sfxGain);
+      
+      oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
+      oscillator.type = soundType === 'hammer' ? 'sawtooth' : 'sine';
+      
+      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.01);
+      gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.4);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.4);
+    }
+
+    function playBackgroundMusic() {
+      console.log('Playing background music: ./textures/music/prairie_community.mp3');
+    }
+
+    function createPrairieBackground() {
+      const container = document.getElementById('prairie-background');
+      
+      // Create wheat stalks
+      for (let i = 0; i < 30; i++) {
+        const wheat = document.createElement('div');
+        wheat.className = 'wheat-stalk';
+        wheat.style.left = Math.random() * 100 + '%';
+        wheat.style.bottom = Math.random() * 20 + '%';
+        wheat.style.animationDelay = Math.random() * 4 + 's';
+        
+        // Random height variation
+        const height = 30 + Math.random() * 20;
+        wheat.style.height = height + 'px';
+        
+        container.appendChild(wheat);
+      }
+      
+      // Create clouds
+      for (let i = 0; i < 3; i++) {
+        const cloud = document.createElement('div');
+        cloud.className = 'cloud';
+        cloud.style.width = (80 + Math.random() * 40) + 'px';
+        cloud.style.height = (40 + Math.random() * 20) + 'px';
+        cloud.style.top = (5 + Math.random() * 25) + '%';
+        cloud.style.animationDuration = (25 + Math.random() * 15) + 's';
+        cloud.style.animationDelay = Math.random() * 10 + 's';
+        container.appendChild(cloud);
+      }
+    }
+
+    function generateNeighbors() {
+      const container = document.getElementById('neighbors-list');
+      container.innerHTML = '';
+
+      neighbors.forEach((neighbor, index) => {
+        const neighborDiv = document.createElement('div');
+        neighborDiv.className = 'neighbor';
+        neighborDiv.dataset.id = index;
+        neighborDiv.onclick = () => askForHelp(index);
+        
+        // Generate energy hearts
+        let energyHtml = '';
+        for (let i = 0; i < neighbor.maxEnergy; i++) {
+          const heartClass = i < neighbor.energy ? 'energy-heart' : 'energy-heart empty';
+          energyHtml += `<div class="${heartClass}"></div>`;
+        }
+        
+        neighborDiv.innerHTML = `
+          <div class="neighbor-energy">${energyHtml}</div>
+          <div class="neighbor-name">${neighbor.name}</div>
+          <div class="neighbor-skill">${neighbor.skill}</div>
+          <div class="neighbor-status">${neighbor.status}</div>
+        `;
+        
+        container.appendChild(neighborDiv);
+      });
+    }
+
+    function askForHelp(neighborIndex) {
+      const neighbor = neighbors[neighborIndex];
+      const neighborDiv = document.querySelector(`[data-id="${neighborIndex}"]`);
+      
+      if (!gameStarted || !currentTask) {
+        playSound('gather');
+        return;
+      }
+      
+      if (neighbor.energy <= 0) {
+        playSound('gather');
+        return;
+      }
+      
+      if (helpingNeighbors.includes(neighborIndex)) {
+        return; // Already helping
+      }
+      
+      // Add neighbor to helping list
+      helpingNeighbors.push(neighborIndex);
+      neighborDiv.classList.add('helping');
+      
+      // Decrease energy
+      neighbor.energy = Math.max(0, neighbor.energy - 1);
+      
+      // Update cooperation
+      cooperationLevel += neighbor.helpBonus;
+      updateCooperation();
+      
+      // Update task progress
+      currentTaskProgress += neighbor.helpBonus;
+      updateTaskProgress();
+      
+      // Update neighbor display
+      updateNeighborDisplay(neighborIndex);
+      
+      playSound('cooperation');
+      console.log(`Playing neighbor help sound: ./textures/sfx/neighbor_help.wav`);
+      
+      // Check if task is complete
+      if (currentTaskProgress >= 100) {
+        setTimeout(completeCurrentTask, 1000);
+      }
+    }
+
+    function updateNeighborDisplay(neighborIndex) {
+      const neighbor = neighbors[neighborIndex];
+      const neighborDiv = document.querySelector(`[data-id="${neighborIndex}"]`);
+      
+      // Update energy hearts
+      let energyHtml = '';
+      for (let i = 0; i < neighbor.maxEnergy; i++) {
+        const heartClass = i < neighbor.energy ? 'energy-heart' : 'energy-heart empty';
+        energyHtml += `<div class="${heartClass}"></div>`;
+      }
+      
+      neighborDiv.querySelector('.neighbor-energy').innerHTML = energyHtml;
+      
+      // Update status
+      if (neighbor.energy <= 0) {
+        neighborDiv.classList.add('tired');
+        neighborDiv.querySelector('.neighbor-status').textContent = 'Resting - needs a break';
+      }
+    }
+
+    function startBarnRaising() {
+      if (gameStarted) return;
+      
+      gameStarted = true;
+      startTime = Date.now();
+      currentTaskIndex = 0;
+      
+      document.getElementById('start-btn').disabled = true;
+      document.getElementById('start-btn').textContent = 'Barn Raising in Progress...';
+      
+      startTimer();
+      startNextTask();
+      
+      playSound('gather');
+      console.log('Playing barn raising start sound: ./textures/sfx/barn_start.wav');
+    }
+
+    function startNextTask() {
+      if (currentTaskIndex >= buildingTasks.length) {
+        completeBarnRaising();
+        return;
+      }
+      
+      currentTask = buildingTasks[currentTaskIndex];
+      currentTaskProgress = 0;
+      helpingNeighbors = [];
+      
+      // Reset neighbor helping status
+      document.querySelectorAll('.neighbor').forEach(neighbor => {
+        neighbor.classList.remove('helping');
+      });
+      
+      // Update task description
+      document.getElementById('task-description').textContent = currentTask.description;
+      updateTaskProgress();
+      
+      // Add barn pieces for this task
+      addBarnPieces();
+      
+      playSound('hammer');
+    }
+
+    function addBarnPieces() {
+      const barnFrame = document.getElementById('barn-frame');
+      
+      currentTask.positions.forEach((position, index) => {
+        const piece = document.createElement('div');
+        piece.className = `barn-piece ${currentTask.pieces}`;
+        piece.style.left = position.left;
+        piece.style.bottom = position.bottom;
+        piece.dataset.taskIndex = currentTaskIndex;
+        piece.dataset.pieceIndex = index;
+        
+        // Add piece after a delay for animation
+        setTimeout(() => {
+          piece.classList.add('available');
+        }, index * 200);
+        
+        barnFrame.appendChild(piece);
+      });
+    }
+
+    function completeCurrentTask() {
+      // Mark all pieces for this task as placed
+      const pieces = document.querySelectorAll(`[data-task-index="${currentTaskIndex}"]`);
+      pieces.forEach(piece => {
+        piece.classList.remove('available');
+        piece.classList.add('placed');
+      });
+      
+      // Move to next task
+      currentTaskIndex++;
+      
+      // Small delay before starting next task
+      setTimeout(() => {
+        if (currentTaskIndex < buildingTasks.length) {
+          startNextTask();
+        } else {
+          completeBarnRaising();
+        }
+      }, 1500);
+      
+      playSound('complete');
+      console.log(`Playing task complete sound: ./textures/sfx/task_complete.wav`);
+    }
+
+    function completeBarnRaising() {
+      clearInterval(gameInterval);
+      
+      const elapsed = Date.now() - startTime;
+      const minutes = Math.floor(elapsed / 60000);
+      const seconds = Math.floor((elapsed % 60000) / 1000);
+      const timeText = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+      
+      // Count neighbors who helped
+      neighborsHelped = neighbors.filter(neighbor => neighbor.energy < neighbor.maxEnergy).length;
+      
+      // Final cooperation boost
+      cooperationLevel = Math.min(100, cooperationLevel + 20);
+      updateCooperation();
+      
+      document.getElementById('final-cooperation').textContent = Math.round(cooperationLevel);
+      document.getElementById('neighbors-helped').textContent = neighborsHelped;
+      document.getElementById('final-time').textContent = timeText;
+      document.getElementById('completion-screen').style.display = 'flex';
+      
+      playSound('success');
+      console.log('Playing barn completion celebration: ./textures/sfx/barn_celebration.wav');
+    }
+
+    function updateTaskProgress() {
+      const progressFill = document.getElementById('task-progress');
+      const progressText = document.getElementById('progress-text');
+      
+      const percentage = Math.min(100, currentTaskProgress);
+      progressFill.style.width = percentage + '%';
+      
+      if (percentage >= 100) {
+        progressText.textContent = 'Task Complete!';
+      } else {
+        const helpNeeded = Math.max(0, currentTask.requiredHelp - helpingNeighbors.length);
+        progressText.textContent = `${Math.round(percentage)}% - Need ${helpNeeded} more helpers`;
+      }
+    }
+
+    function updateCooperation() {
+      const cooperationFill = document.getElementById('cooperation-fill');
+      const cooperationText = document.getElementById('cooperation-text');
+      
+      const percentage = Math.min(100, cooperationLevel);
+      cooperationFill.style.width = percentage + '%';
+      
+      if (percentage >= 90) {
+        cooperationText.textContent = `${Math.round(percentage)}% - Outstanding teamwork!`;
+      } else if (percentage >= 70) {
+        cooperationText.textContent = `${Math.round(percentage)}% - Great cooperation!`;
+      } else if (percentage >= 50) {
+        cooperationText.textContent = `${Math.round(percentage)}% - Good progress together`;
+      } else if (percentage >= 25) {
+        cooperationText.textContent = `${Math.round(percentage)}% - Building community`;
+      } else {
+        cooperationText.textContent = `${Math.round(percentage)}% - Gather your neighbors!`;
+      }
+    }
+
+    function startTimer() {
+      gameInterval = setInterval(() => {
+        if (!gameStarted) return;
+        
+        const elapsed = Date.now() - startTime;
+        const minutes = Math.floor(elapsed / 60000);
+        const seconds = Math.floor((elapsed % 60000) / 1000);
+        
+        // Update timer display if needed (could add to UI)
+      }, 1000);
+    }
+
+    function resetConstruction() {
+      // Reset game state
+      gameStarted = false;
+      startTime = null;
+      currentTaskIndex = 0;
+      currentTask = null;
+      currentTaskProgress = 0;
+      cooperationLevel = 0;
+      neighborsHelped = 0;
+      helpingNeighbors = [];
+      
+      if (gameInterval) {
+        clearInterval(gameInterval);
+        gameInterval = null;
+      }
+      
+      // Reset UI
+      document.getElementById('start-btn').disabled = false;
+      document.getElementById('start-btn').textContent = 'Start Barn Raising';
+      document.getElementById('task-description').textContent = 'Click "Start Barn Raising" to begin!';
+      document.getElementById('progress-text').textContent = 'Ready to start';
+      document.getElementById('task-progress').style.width = '0%';
+      document.getElementById('completion-screen').style.display = 'none';
+      
+      // Reset cooperation meter
+      updateCooperation();
+      
+      // Clear barn frame
+      const barnFrame = document.getElementById('barn-frame');
+      const pieces = barnFrame.querySelectorAll('.barn-piece');
+      pieces.forEach(piece => piece.remove());
+      
+      // Reset neighbors
+      neighbors.forEach((neighbor, index) => {
+        neighbor.energy = neighbor.maxEnergy;
+        const neighborDiv = document.querySelector(`[data-id="${index}"]`);
+        neighborDiv.classList.remove('helping', 'tired');
+        neighborDiv.querySelector('.neighbor-status').textContent = neighbor.status;
+      });
+      
+      generateNeighbors();
+      
+      console.log('Playing reset sound: ./textures/sfx/barn_reset.wav');
+    }
+
+    function raiseBarnAgain() {
+      resetConstruction();
+    }
+
+    function returnToElisphere() {
+      if (window.parent && window.parent.game) {
+        window.parent.game.returnFromMiniGame();
+      } else {
+        alert("Returning to Elisphere... (This would integrate with the main game)");
+        window.close();
+      }
+    }
+
+    // Initialize the game when the page loads
+    window.addEventListener('load', () => {
+      // Resume audio context on user interaction
+      document.addEventListener('click', () => {
+        if (audioContext && audioContext.state === 'suspended') {
+          audioContext.resume();
+        }
+      }, { once: true });
+      
+      initGame();
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' && !gameStarted) {
+        e.preventDefault();
+        startBarnRaising();
+      } else if (e.code >= 'Digit1' && e.code <= 'Digit6' && gameStarted) {
+        e.preventDefault();
+        const neighborIndex = parseInt(e.code.slice(-1)) - 1;
+        if (neighborIndex < neighbors.length) {
+          askForHelp(neighborIndex);
+        }
+      }
+    });
+
+    // Add energy regeneration over time
+    setInterval(() => {
+      if (!gameStarted) return;
+      
+      neighbors.forEach((neighbor, index) => {
+        if (neighbor.energy < neighbor.maxEnergy && Math.random() < 0.3) {
+          neighbor.energy = Math.min(neighbor.maxEnergy, neighbor.energy + 1);
+          
+          const neighborDiv = document.querySelector(`[data-id="${index}"]`);
+          if (neighbor.energy > 0) {
+            neighborDiv.classList.remove('tired');
+            neighborDiv.querySelector('.neighbor-status').textContent = neighbor.status;
+          }
+          
+          updateNeighborDisplay(index);
+        }
+      });
+    }, 5000); // Every 5 seconds, chance for energy to regenerate
+
+    // Add visual feedback for successful cooperation
+    function addCooperationEffect() {
+      const meter = document.querySelector('.cooperation-meter');
+      meter.style.animation = 'none';
+      void meter.offsetWidth; // Force reflow
+      meter.style.animation = 'helping-pulse 0.5s ease';
+      
+      setTimeout(() => {
+        meter.style.animation = '';
+      }, 500);
+    }
+
+    // Override the cooperation update to include visual feedback
+    const originalUpdateCooperation = updateCooperation;
+    updateCooperation = function() {
+      originalUpdateCooperation();
+      addCooperationEffect();
+    };
+  </script>
+</body>
+</html>

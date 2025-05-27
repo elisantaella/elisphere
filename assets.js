@@ -51,7 +51,7 @@ class AssetLoader {
     loadSkyTexture() {
         return new Promise((resolve, reject) => {
           this.gltfLoader.load(
-            'textures/sky.glb',
+            './textures/sky.glb',
             (gltf) => {
               let skyTexture = null;
               gltf.scene.traverse((child) => {
@@ -82,7 +82,7 @@ class AssetLoader {
         return new Promise((resolve, reject) => {
           // Load the Mixamo character models
           this.gltfLoader.load(
-            'textures/character.glb',
+            './textures/character.glb',
             (gltf) => {
               // Scale the model to be larger - increased from 0.01 to 0.04
               gltf.scene.scale.set(0.04, 0.04, 0.04);
@@ -149,10 +149,10 @@ class AssetLoader {
       });
     }
     
-    loadMtRushmore() {
+    /*loadMtRushmore() {
         return new Promise((resolve, reject) => {
           this.gltfLoader.load(
-            'textures/rushmore.glb',
+            './textures/rushmore.glb',
             (gltf) => {
               // Process and store the Mt. Rushmore model
               const model = gltf.scene;
@@ -166,7 +166,7 @@ class AssetLoader {
         );
       });
     }
-    
+    */
     loadEnvironmentTextures() {
       // Load any additional textures needed for the environment
       return new Promise((resolve) => {
@@ -218,7 +218,7 @@ class AssetLoader {
   try {
     const [characters, mtRushmore, textures, fonts, skyTexture] = await Promise.all([
       this.loadCharacterModels(),
-      this.loadMtRushmore(),
+      //this.loadMtRushmore(),
       this.loadEnvironmentTextures(),
       this.loadFonts(),
       this.loadSkyTexture() // Add sky texture loading
